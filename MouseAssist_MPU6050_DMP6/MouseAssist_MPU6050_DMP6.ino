@@ -1,3 +1,19 @@
+// Also using Arduino bounce library & some code based on the bounce example code
+#define BOUNCE
+#ifdef BOUNCE
+#include <Bounce.h>
+
+// This code turns a led on/off through a debounced button
+// Build the circuit indicated here: http://arduino.cc/en/Tutorial/Button
+
+#define L_MOUSE_BUTTON 5
+//#define LED 6 is defined in MPU6050 code as LED_PIN
+
+// Instantiate a Bounce object with a 5 millisecond debounce time
+Bounce bouncer = Bounce( L_MOUSE_BUTTON, 5 ); 
+#endif
+
+
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v2.0)
 // 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
@@ -105,11 +121,11 @@ MPU6050 mpu;
 // components with gravity removed and adjusted for the world frame of
 // reference (yaw is relative to initial orientation, since no magnetometer
 // is present in this case). Could be quite handy in some cases.
-#define OUTPUT_READABLE_WORLDACCEL
+//#define OUTPUT_READABLE_WORLDACCEL
 
-// uncomment "OUTPUT_TEAPOT" if you want output that matches the
+// uncomment "OUTPUT_T" if you want output that matches the
 // format used for the InvenSense teapot demo
-//#define OUTPUT_TEAPOT
+#define OUTPUT_TEAPOT
 
 
 
@@ -228,6 +244,10 @@ void setup() {
     // configure LED for output
     pinMode(LED_PIN, OUTPUT);
 
+#ifdef BOUNCE
+  pinMode(L_MOUSE_BUTTON,INPUT);
+//  pinMode(LED,OUTPUT);   // already done via MPU6050 code
+#endif
 
         // *** >>>>>>> should read values & use those here!!!!!
 	lastX = 0;
@@ -333,13 +353,13 @@ void loop() {
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
             
-            /*
             Serial.print("areal\t");
             Serial.print(aaReal.x);
             Serial.print("\t");
             Serial.print(aaReal.y);
             Serial.print("\t");
             Serial.println(aaReal.z);
+            /*
             */
  
              while (Serial.available() && Serial.read()){ // empty buffer again
@@ -347,7 +367,44 @@ void loop() {
             }
             if (run) {
                 //Mouse.move((scaleX*aaWorld.x-scaleX*lastX)/20, (scaleY*aaWorld.y-scaleY*lastY)/20); // done this way to increase resolution
-                Mouse.move((scaleX*aaReal.x-scaleX*lastX)/40, (scaleY*aaReal.y-scaleY*lastY)/40); // done this way to increase resolution
+                //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/40, (scaleY*aaReal.y-scaleY*lastY)/40); // done this way to increase resolution
+                Mouse.move((scaleX*aaReal.x-scaleX*lastX)/80, (scaleY*aaReal.y-scaleY*lastY)/80); // done this way to increase resolution
+#ifdef BOUNCE
+ // Update the debouncer
+  bouncer.update ( );
+ 
+ // Get the update value
+ int MouseLeft = bouncer.read();
+ 
+ // Turn on or off the LED
+ if ( MouseLeft == HIGH) {
+   digitalWrite(LED_PIN, LOW );
+   Mouse.release();
+ } else {
+                Mouse.press();
+    digitalWrite(LED_PIN, HIGH );
+ }
+
+#endif
+/*
+                ?? instead of doing move of (current-last), just detect WHICH direction(s) AND move a standard amount in that dir
+                or have several standard amounts/steps or speed/acceleration
+                idea is that 
+                  - user can nudge mouse cursor in one direction
+                  - avoid the issue of hand/finger has to return to a start position at some point
+                  ** is this only issue when using sensor to measure acceleration
+                      alos have teh accel = ZERO issue when at rest AND when MOVING at cosntant speed
+                    if measuring angle/rotation, or position or tilt - then avoid above
+                  ?? need some delay to help ignore the return movement
+                  or use say a double bump to indicate direction, or double then single if still going same way
+                  
+                ??look into init & orientation of sensor at init - does it need to be aligned - say north???
+                or if using compass is there the local angle to compensate
+                ... because mouse on screen is going diagonaly!!!!!
+                
+                + need to get tap or some other gesture working (hopefully via the sensor first 
+                - so just read state, rather than have to write own code to track movements & recognise geestures....
+*/                
             }
             // using these - causes FIFO overuns!!!!!
             //delay(8);       // ~ standard mouse polling rate (~125Hz)
@@ -409,8 +466,12 @@ void loop() {
             teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
         #endif
 
-        // blink LED to indicate activity
+#ifdef BOUNCE
+
+#else
+// blink LED to indicate activity
         blinkState = !blinkState;
         digitalWrite(LED_PIN, blinkState);
+#endif
     }
 }
