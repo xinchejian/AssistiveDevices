@@ -1,10 +1,10 @@
+
+#define SIMULATE_MOUSE_IN_SERIAL_CONSOLE
+
 // Also using Arduino bounce library & some code based on the bounce example code
 #define BOUNCE
 #ifdef BOUNCE
 #include <Bounce.h>
-
-// This code turns a led on/off through a debounced button
-// Build the circuit indicated here: http://arduino.cc/en/Tutorial/Button
 
 #define L_MOUSE_BUTTON 5
 //#define LED 6 is defined in MPU6050 code as LED_PIN
@@ -418,8 +418,15 @@ inline void getAccel (){
             Serial.print("\t");
             Serial.println(aaReal.z);
             */
-            X =(scaleX*aaReal.x-scaleX*lastX)/80;
-            Y =(scaleY*aaReal.y-scaleY*lastY)/80;
+            //Mouse.move((scaleX*aaWorld.x-scaleX*lastX)/20, (scaleY*aaWorld.y-scaleY*lastY)/20); // done this way to increase resolution
+            //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/40, (scaleY*aaReal.y-scaleY*lastY)/40); // done this way to increase resolution
+            //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/80, (scaleY*aaReal.y-scaleY*lastY)/80); // done this way to increase resolution
+
+            //X =(scaleX*aaReal.x-scaleX*lastX)/80;     // first try - using current & last acceleration
+            //Y =(scaleY*aaReal.y-scaleY*lastY)/80;
+
+            X = aaReal.x;
+            Y = aaReal.y;
 
 /*
                 ?? instead of doing move of (current-last), just detect WHICH direction(s) AND move a standard amount in that dir
@@ -500,10 +507,61 @@ inline void getAccel (){
 }
 
 inline void moveMouseRelative(long accelX, long accelY){
-    //Mouse.move((scaleX*aaWorld.x-scaleX*lastX)/20, (scaleY*aaWorld.y-scaleY*lastY)/20); // done this way to increase resolution
-    //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/40, (scaleY*aaReal.y-scaleY*lastY)/40); // done this way to increase resolution
-    //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/80, (scaleY*aaReal.y-scaleY*lastY)/80); // done this way to increase resolution
 
-    Mouse.move(accelX, accelY);
-        //MouseInc
+    //Mouse.move(accelX, accelY); // first try - using current & last acceleration
+
+// look at a min accel - below which NO CHANGE to mouseInc
+    int minX = 0;
+    int minY = 0;
+    int MouseStepX = 1;
+    int MouseStepY = 1;
+
+// this attempt KISS
+    // Note there is no change to increment if acceleration = 0
+    //  ie keep moving the same (accel = 0 means velocity (movement) continues unchanged)
+    #ifdef SIMULATE_MOUSE_IN_SERIAL_CONSOLE
+        Serial.print(accelX);
+        Serial.print("\t");
+        Serial.print(accelY);
+        Serial.print("\t");
+    #endif
+
+    if (accelX > minX){
+        MouseIncX = MouseStepX;
+        #ifdef SIMULATE_MOUSE_IN_SERIAL_CONSOLE
+            Serial.print("->");
+        #endif
+    }
+    if (accelX < -minX){
+        MouseIncX = -MouseStepX;
+        #ifdef SIMULATE_MOUSE_IN_SERIAL_CONSOLE
+            Serial.print("<-");
+        #endif
+    }
+
+    if (accelY > minY){
+        MouseIncY = MouseStepY;
+        #ifdef SIMULATE_MOUSE_IN_SERIAL_CONSOLE
+            Serial.println("^");
+        #endif
+    }
+    if (accelY < -minY){
+        MouseIncY = -MouseStepY;
+        #ifdef SIMULATE_MOUSE_IN_SERIAL_CONSOLE
+            Serial.println("v");
+        #endif
+    }
+
+    #ifdef SIMULATE_MOUSE_IN_SERIAL_CONSOLE
+        // print "." if there are NO X AND Y movements
+        if ((accelX <= minX) && (accelX >= -minX) &&
+            (accelY <= minY) && (accelY >= -minY)){
+            Serial.println(".");
+        }
+    #endif
+
+    #ifdef SIMULATE_MOUSE_IN_SERIAL_CONSOLE
+    #else
+        Mouse.move(MouseIncX, MouseIncY); // first try - using current & last acceleration
+    #endif
 }
