@@ -10,10 +10,10 @@
 //#define LED 6 is defined in MPU6050 code as LED_PIN
 
 // Instantiate a Bounce object with a 5 millisecond debounce time
-Bounce bouncer = Bounce( L_MOUSE_BUTTON, 5 ); 
+Bounce bouncer = Bounce( L_MOUSE_BUTTON, 5 );
 #endif
 
-
+/*
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v2.0)
 // 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
@@ -30,6 +30,7 @@ Bounce bouncer = Bounce( L_MOUSE_BUTTON, 5 );
 //     2012-06-04 - remove accel offset clearing for better results (thanks Sungon Lee)
 //     2012-06-01 - fixed gyro sensitivity to be 2000 deg/sec instead of 250
 //     2012-05-30 - basic DMP initialization working
+*/
 
 /* ============================================
 I2Cdev device library code is placed under the MIT license
@@ -90,7 +91,9 @@ MPU6050 mpu;
    http://code.google.com/p/arduino/issues/detail?id=958
  * ========================================================================= */
 
-
+// ONLY USE ONE of these #defs!!!
+// for now only starting with OUTPUT_READABLE_REALACCEL and OUTPUT_READABLE_WORLDACCEL
+//    for the Assistive wand mouse device
 
 // uncomment "OUTPUT_READABLE_QUATERNION" if you want to see the actual
 // quaternion components in a [w, x, y, z] format (not best for parsing
@@ -115,7 +118,7 @@ MPU6050 mpu;
 // not compensated for orientation, so +X is always +X according to the
 // sensor, just without the effects of gravity. If you want acceleration
 // compensated for orientation, us OUTPUT_READABLE_WORLDACCEL instead.
-//#define OUTPUT_READABLE_REALACCEL
+#define OUTPUT_READABLE_REALACCEL
 
 // uncomment "OUTPUT_READABLE_WORLDACCEL" if you want to see acceleration
 // components with gravity removed and adjusted for the world frame of
@@ -125,7 +128,7 @@ MPU6050 mpu;
 
 // uncomment "OUTPUT_T" if you want output that matches the
 // format used for the InvenSense teapot demo
-#define OUTPUT_TEAPOT
+//#define OUTPUT_TEAPOT
 
 
 
@@ -152,6 +155,12 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 // packet structure for InvenSense teapot demo
 uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\n' };
 
+// note first attempts using X, Y, Z & lastX etc as acceleration
+// later switched to using them as amount to MOVE the mouse!!
+	long X;
+	long Y;
+	long Z;
+
 	long lastX;
 	long lastY;
 	long lastZ;
@@ -160,8 +169,12 @@ uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\
 	int scaleY;
 	int scaleZ;
 
+	int MouseIncX;
+	int MouseIncY;
+	int MouseIncZ;
+
     bool run = false;
-    
+
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
 // ================================================================
@@ -200,20 +213,20 @@ void setup() {
     // verify connection
     Serial.println(F("Testing device connections..."));
     Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
-
+/*
     // wait for ready
-    Serial.println(F("\nSend any character to begin DMP programming and demo: "));
+    Serial.println(F("\nSend any character to begin ASSISTIVE PROTOTYPE wand mouse: "));
     while (Serial.available() && Serial.read()); // empty buffer
     while (!Serial.available());                 // wait for data
     while (Serial.available() && Serial.read()); // empty buffer again
-
+*/
     run = true;
 
 
     // load and configure the DMP
     Serial.println(F("Initializing DMP..."));
     devStatus = mpu.dmpInitialize();
-    
+
     // make sure it worked (returns 0 if so)
     if (devStatus == 0) {
         // turn on the DMP, now that it's ready
@@ -257,6 +270,10 @@ void setup() {
 	scaleX = 1;
 	scaleY = 1;
 	scaleZ = 1;
+
+	MouseIncX = 0;
+	MouseIncY = 0;
+	MouseIncZ = 0;
 }
 
 
@@ -283,6 +300,46 @@ void loop() {
         // .
     }
 
+
+    // using run & serial text to allow DISABLING of reading data AND moving the mouse
+     while (Serial.available() && Serial.read()){ // empty buffer again
+        run = false;
+    }
+    if (run) {
+        getAccel ();
+        moveMouseRelative(X, Y);
+    }
+
+    // now read & act on mouse switch(es)
+     #ifdef BOUNCE
+     // Update the debouncer
+      bouncer.update ( );
+
+     // Get the update value
+     int MouseLeft = bouncer.read();
+
+     // Turn on or off the LED and mouse click
+     if ( MouseLeft == HIGH) {
+       Mouse.release();
+       digitalWrite(LED_PIN, LOW );
+     } else {
+        Mouse.press();
+        digitalWrite(LED_PIN, HIGH );
+     }
+     #endif
+
+
+    // using these - causes FIFO overuns!!!!!
+    // so can't try (this simple way) to set mouse poll/frame rate - for now KISS - just run a max speed
+    // the sensor sample rate and buffer triggering interrupts will drive the loop speed
+    // as well as code execution time
+    //delay(8);       // ~ standard mouse polling rate (~125Hz)
+    //delay(50);
+    //delay(150);
+}
+
+
+inline void getAccel (){
     // reset interrupt flag and get INT_STATUS byte
     mpuInterrupt = false;
     mpuIntStatus = mpu.getIntStatus();
@@ -303,7 +360,7 @@ void loop() {
 
         // read a packet from FIFO
         mpu.getFIFOBytes(fifoBuffer, packetSize);
-        
+
         // track FIFO count here in case there is > 1 packet available
         // (this lets us immediately read more without waiting for an interrupt)
         fifoCount -= packetSize;
@@ -352,44 +409,22 @@ void loop() {
             mpu.dmpGetAccel(&aa, fifoBuffer);
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-            
+
+            /*
             Serial.print("areal\t");
             Serial.print(aaReal.x);
             Serial.print("\t");
             Serial.print(aaReal.y);
             Serial.print("\t");
             Serial.println(aaReal.z);
-            /*
             */
- 
-             while (Serial.available() && Serial.read()){ // empty buffer again
-                run = false;
-            }
-            if (run) {
-                //Mouse.move((scaleX*aaWorld.x-scaleX*lastX)/20, (scaleY*aaWorld.y-scaleY*lastY)/20); // done this way to increase resolution
-                //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/40, (scaleY*aaReal.y-scaleY*lastY)/40); // done this way to increase resolution
-                Mouse.move((scaleX*aaReal.x-scaleX*lastX)/80, (scaleY*aaReal.y-scaleY*lastY)/80); // done this way to increase resolution
-#ifdef BOUNCE
- // Update the debouncer
-  bouncer.update ( );
- 
- // Get the update value
- int MouseLeft = bouncer.read();
- 
- // Turn on or off the LED
- if ( MouseLeft == HIGH) {
-   digitalWrite(LED_PIN, LOW );
-   Mouse.release();
- } else {
-                Mouse.press();
-    digitalWrite(LED_PIN, HIGH );
- }
+            X =(scaleX*aaReal.x-scaleX*lastX)/80;
+            Y =(scaleY*aaReal.y-scaleY*lastY)/80;
 
-#endif
 /*
                 ?? instead of doing move of (current-last), just detect WHICH direction(s) AND move a standard amount in that dir
                 or have several standard amounts/steps or speed/acceleration
-                idea is that 
+                idea is that
                   - user can nudge mouse cursor in one direction
                   - avoid the issue of hand/finger has to return to a start position at some point
                   ** is this only issue when using sensor to measure acceleration
@@ -397,23 +432,18 @@ void loop() {
                     if measuring angle/rotation, or position or tilt - then avoid above
                   ?? need some delay to help ignore the return movement
                   or use say a double bump to indicate direction, or double then single if still going same way
-                  
+
                 ??look into init & orientation of sensor at init - does it need to be aligned - say north???
                 or if using compass is there the local angle to compensate
                 ... because mouse on screen is going diagonaly!!!!!
-                
-                + need to get tap or some other gesture working (hopefully via the sensor first 
+
+                + need to get tap or some other gesture working (hopefully via the sensor first
                 - so just read state, rather than have to write own code to track movements & recognise geestures....
-*/                
-            }
-            // using these - causes FIFO overuns!!!!!
-            //delay(8);       // ~ standard mouse polling rate (~125Hz)
-            //delay(50);
-            //delay(150);
-        
-            lastX = aaWorld.x;
-            lastY = aaWorld.y;
-            lastZ = aaWorld.z;
+*/
+
+            lastX = aaReal.x;
+            lastY = aaReal.y;
+            lastZ = aaReal.z;
        #endif
 
         #ifdef OUTPUT_READABLE_WORLDACCEL
@@ -424,7 +454,7 @@ void loop() {
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
             mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-            
+
             /*
             Serial.print("aworld\t");
             Serial.print(aaWorld.x);
@@ -434,24 +464,17 @@ void loop() {
             Serial.println(aaWorld.z);
             */
 
-            
-             while (Serial.available() && Serial.read()){ // empty buffer again
-                run = false;
-            }
-            if (run) {
-                Mouse.move((scaleX*aaWorld.x-scaleX*lastX)/20, (scaleY*aaWorld.y-scaleY*lastY)/20); // done this way to increase resolution
+
+                //Mouse.move((scaleX*aaWorld.x-scaleX*lastX)/20, (scaleY*aaWorld.y-scaleY*lastY)/20); // done this way to increase resolution
                 //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/40, (scaleY*aaReal.y-scaleY*lastY)/40); // done this way to increase resolution
-            }
-            // using these - causes FIFO overuns!!!!!
-            //delay(8);       // ~ standard mouse polling rate (~125Hz)
-            //delay(50);
-            //delay(150);
-        
+            X =(scaleX*aaWorld.x-scaleX*lastX)/20;
+            Y =(scaleY*aaWorld.y-scaleY*lastY)/20;
+
             lastX = aaWorld.x;
             lastY = aaWorld.y;
             lastZ = aaWorld.z;
         #endif
-    
+
         #ifdef OUTPUT_TEAPOT
             // display quaternion values in InvenSense Teapot demo format:
             teapotPacket[2] = fifoBuffer[0];
@@ -474,4 +497,13 @@ void loop() {
         digitalWrite(LED_PIN, blinkState);
 #endif
     }
+}
+
+inline void moveMouseRelative(long accelX, long accelY){
+    //Mouse.move((scaleX*aaWorld.x-scaleX*lastX)/20, (scaleY*aaWorld.y-scaleY*lastY)/20); // done this way to increase resolution
+    //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/40, (scaleY*aaReal.y-scaleY*lastY)/40); // done this way to increase resolution
+    //Mouse.move((scaleX*aaReal.x-scaleX*lastX)/80, (scaleY*aaReal.y-scaleY*lastY)/80); // done this way to increase resolution
+
+    Mouse.move(accelX, accelY);
+        //MouseInc
 }
