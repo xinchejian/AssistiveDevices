@@ -20,11 +20,13 @@ boolean enable_mouse = false;    // used as part of enable process
 #ifdef BOUNCE
 #include <Bounce.h>
 
-#define L_MOUSE_BUTTON 5
+#define TOGGLE_MOUSE_BUTTON 5
+#define L_MOUSE_BUTTON 6
 #define LED_PIN 6
 
 // Instantiate a Bounce object with a 5 millisecond debounce time
-Bounce deBouncer = Bounce( L_MOUSE_BUTTON, 5 );
+Bounce deBounceToggle = Bounce( TOGGLE_MOUSE_BUTTON, 5 );
+Bounce deBounceLeft = Bounce( L_MOUSE_BUTTON, 5 );
 #endif
 
 
@@ -72,6 +74,7 @@ void setup() {
     my3IMU.init(true);
 
 #ifdef BOUNCE
+    pinMode(TOGGLE_MOUSE_BUTTON,INPUT);
     pinMode(L_MOUSE_BUTTON,INPUT);
     pinMode(LED_PIN,OUTPUT);
 #endif
@@ -90,18 +93,14 @@ void loop() {
 
     // now read & act on mouse switch(es)
 #ifdef BOUNCE
-    // Update the dedeBouncer
-    deBouncer.update ( );
-
-    // Get the update value
-    int MouseLeft = deBouncer.read();
-
+    // Process the Toggle mouse switch
+    deBounceToggle.update ( );
     // En/disable mouse & LED
-    if ( MouseLeft == HIGH) {
-        //Mouse.release();        // send mouse left button up/release to computer
+    if ( deBounceToggle.read() == HIGH) {
         if (enable_mouse) {
             move_mouse = !move_mouse;    //toggle mouse en/disable
             enable_mouse = false;
+            Mouse.release();             // if disableing mouse, ALSO release left button!
             digitalWrite(LED_PIN, move_mouse);
         }
         else {
@@ -110,10 +109,21 @@ void loop() {
     } 
     else {
         enable_mouse = true;    // Setup to enable mouse AFTER switch released - avoids endless toggling 
-        //Mouse.press();        // send mouse left button press/down to computer
     }
-    // move mouse
+
+    // Process left mouse button
+    deBounceLeft.update ( );
+    if ( deBounceLeft.read() == HIGH) {
+        Mouse.release();        // send mouse left button up/release to computer
+    }
+    else {
+        Mouse.press();        // send mouse left button press/down to computer
+    }
+
+    // move mouse - if enabled
     if (move_mouse) Mouse.move(-x, y, 0);
+
+
 #endif
 }
 
