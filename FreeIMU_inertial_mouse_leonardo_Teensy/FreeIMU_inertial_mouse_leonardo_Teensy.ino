@@ -1,3 +1,7 @@
+//Currently hold board upside down with "int" pin towards PC screen
+
+// Have to use Free-IMU version of I2Cdev library
+
 /*
 More buttons OR 3/4 clicks to
  - reset cursor to center or highlihgt/flash
@@ -16,13 +20,14 @@ boolean enable_mouse = false;    // used as part of enable process
 //#define MOVE_MOUSE
 
 // Also using Arduino bounce library & some code based on the bounce example code
+// for "mouse" switches
 #define BOUNCE
 #ifdef BOUNCE
 #include <Bounce.h>
 
 #define TOGGLE_MOUSE_BUTTON 5
-#define L_MOUSE_BUTTON 6
-#define LED_PIN 6
+#define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6
+#define LED_PIN 6               // LED on pin 6 for Teensy++ 2
 
 // Instantiate a Bounce object with a 5 millisecond debounce time
 Bounce deBounceToggle = Bounce( TOGGLE_MOUSE_BUTTON, 5 );
@@ -86,21 +91,25 @@ void loop() {
     my3IMU.getYawPitchRoll(ypr);
 
     // scale angles to mouse movements. You can replace 10 with whatever feels adeguate for you.
-    // biggere values mean faster movements
-    int x = map(ypr[1], -90, 90, -10, 10);
-    int y = map(ypr[2], -90, 90, -10, 10);
+    // bigger values mean faster movements
+    // Also remember you change config mouse movement via your 
+    // operating system in-built features!
+    //int x = map(ypr[1], -90, 90, -10, 10);
+    //int y = map(ypr[2], -90, 90, -10, 10);
+    int x = map(ypr[1], -90, 90, -4, 4);
+    int y = map(ypr[2], -90, 90, -4, 4);
 
 
     // now read & act on mouse switch(es)
 #ifdef BOUNCE
-    // Process the Toggle mouse switch
+    // Process the "Toggle en/disable mouse" switch
     deBounceToggle.update ( );
     // En/disable mouse & LED
     if ( deBounceToggle.read() == HIGH) {
         if (enable_mouse) {
-            move_mouse = !move_mouse;    //toggle mouse en/disable
+            move_mouse = !move_mouse;            //toggle mouse en/disable
             enable_mouse = false;
-            Mouse.release();             // if disableing mouse, ALSO release left button!
+            if (!move_mouse) Mouse.release();    // if disabling mouse, ALSO release left button!
             digitalWrite(LED_PIN, move_mouse);
         }
         else {
@@ -121,10 +130,11 @@ void loop() {
     }
 
     // move mouse - if enabled
-    if (move_mouse) Mouse.move(-x, y, 0);
+    if (move_mouse) Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
 
 
 #endif
+
 }
 
 
