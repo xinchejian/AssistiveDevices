@@ -1,28 +1,61 @@
-//Currently hold board upside down with "int" pin towards PC screen
+/* 
+ Sensor has to be aligned correctly with your body.
+ For finger/wrist/arm mouse align marker to point at tip of limb.
+ For head mouse ... to be sorted out :)
+ 
+ Configuration / customisation
+ 
+ 
+ Don't forget your operating system ALSO allows configuration of mouse & button behaviour.
+ And if you are using any assistive software, it may also help.\
+ */
 
-// Have to use Free-IMU version of I2Cdev library
 
-/*
+
+// Have to use Free-IMU version of I2Cdev library - not one from Jeffs I2Cdev site/SVN
+
+/* TODO stuff:-
+
+>>>>Check what freeIMU lib does if IMU buffer over-runs!!!!!!
+.. eg if add delays to main loop to control mouse update rate!
+or if serial console debug printing slows things down...
+
+
 More buttons OR 3/4 clicks to
  - reset cursor to center or highlihgt/flash
  - en/disable
  
- 
- ?/ any sign of freezing (uses SPI)????
+ ?/ any sign of freezing (uses SPI - NO not with MMU 6050 - only I2C)????
+ so far NONE, 100% reliable for many many minutes :)
+ dam - TWO lockups after ~ 1+hours
  
  */
 
 // actually control the mouse - for real!
 // For now JUST using button to TOGGLE mouse on/off
-boolean move_mouse = false;    // en/disable mouse movement
-boolean enable_mouse = false;    // used as part of enable process
-// NOT using #def below
-//#define MOVE_MOUSE
+boolean mouseEnabled = false;    // en/disable mouse movement
+boolean enablingMouse = false;    // used as part of enable process
+
+
+#define STEPGROWTH
+#ifdef STEPGROWTH
+int step = 5;       // pitch or roll > step > step move mouse fast, else move slow!
+#endif
+
+//#define LINEARGROWTH
+#ifdef LINEARGROWTH
+// hmmm think about this & time between updates & thus how far/fast mouse cursor moves
+// + operating sys config of mouse behaviour
+int mouseMinStepX = 1;    // default for how MINIMUM distance mouse moves on screen every update
+int mouseMinStepY = 1;    // default for how MINIMUM distance mouse moves on screen every update
+int mouseLinearScaleX = 2;    // default for how MINIMUM distance mouse moves on screen every update
+int mouseLinearScaleY = 2;    // default for how MINIMUM distance mouse moves on screen every update
+int gyroMinX = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+int gyroMinY = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+#endif
 
 // Also using Arduino bounce library & some code based on the bounce example code
 // for "mouse" switches
-#define BOUNCE
-#ifdef BOUNCE
 #include <Bounce.h>
 
 #define TOGGLE_MOUSE_BUTTON 5
@@ -32,7 +65,6 @@ boolean enable_mouse = false;    // used as part of enable process
 // Instantiate a Bounce object with a 5 millisecond debounce time
 Bounce deBounceToggle = Bounce( TOGGLE_MOUSE_BUTTON, 5 );
 Bounce deBounceLeft = Bounce( L_MOUSE_BUTTON, 5 );
-#endif
 
 
 
@@ -72,70 +104,105 @@ FreeIMU my3IMU = FreeIMU();
 
 
 void setup() {
-    Mouse.begin();
-    //Serial.begin(115200);
-    Wire.begin();
+  Mouse.begin();
+  //Serial.begin(115200);
+  Wire.begin();
 
-    my3IMU.init(true);
+  my3IMU.init(true);
 
-#ifdef BOUNCE
-    pinMode(TOGGLE_MOUSE_BUTTON,INPUT);
-    pinMode(L_MOUSE_BUTTON,INPUT);
-    pinMode(LED_PIN,OUTPUT);
-#endif
+  pinMode(TOGGLE_MOUSE_BUTTON,INPUT);
+  pinMode(L_MOUSE_BUTTON,INPUT);
+  pinMode(LED_PIN,OUTPUT);
 }
 
 
 void loop() {
 
-    my3IMU.getYawPitchRoll(ypr);
+  int x;
+  int y;
+  my3IMU.getYawPitchRoll(ypr);
 
-    // scale angles to mouse movements. You can replace 10 with whatever feels adeguate for you.
-    // bigger values mean faster movements
-    // Also remember you change config mouse movement via your 
-    // operating system in-built features!
-    //int x = map(ypr[1], -90, 90, -10, 10);
-    //int y = map(ypr[2], -90, 90, -10, 10);
-    int x = map(ypr[1], -90, 90, -4, 4);
-    int y = map(ypr[2], -90, 90, -4, 4);
+  //Below works - but would specific hard coded 2/3 levels work better?
+  // Then can (user) config to your own preferences!
+  // scale angles to mouse movements. You can replace 10 with whatever feels adeguate for you.
+  // bigger values mean faster movements
+  // Also remember you change config mouse movement via your 
+  // operating system in-built features!
+  //int x = map(ypr[1], -90, 90, -10, 10);
+  //int y = map(ypr[2], -90, 90, -10, 10);
+
+#ifdef STEPGROWTH
+  // If last - current pitch or roll > step, move mouse fast, else move slow!
+  if ((abs(ypr[1]) > step) || (abs(ypr[2]) > step)){
+    x = map(ypr[1], -90, 90, -15, 15);
+    y = map(ypr[2], -90, 90, -15, 15);
+  }
+  else {
+    x = map(ypr[1], -90, 90, -3, 3);
+    y = map(ypr[2], -90, 90, -3, 3);
+  }
+  
+  delay(10);
+#endif
 
 
-    // now read & act on mouse switch(es)
-#ifdef BOUNCE
-    // Process the "Toggle en/disable mouse" switch
-    deBounceToggle.update ( );
-    // En/disable mouse & LED
-    if ( deBounceToggle.read() == HIGH) {
-        if (enable_mouse) {
-            move_mouse = !move_mouse;            //toggle mouse en/disable
-            enable_mouse = false;
-            if (!move_mouse) Mouse.release();    // if disabling mouse, ALSO release left button!
-            digitalWrite(LED_PIN, move_mouse);
-        }
-        else {
-            digitalWrite(LED_PIN, move_mouse);
-        }
-    } 
-    else {
-        enable_mouse = true;    // Setup to enable mouse AFTER switch released - avoids endless toggling 
+#ifdef LINEARGROWTH
+  int gyroX = ypr[1];
+  int gyroY = ypr[2];
+
+
+  int mouseStepX = mouseMinStepX + (gyroX + gyroMinX) * mouseLinearScaleX / gyroMinX;    // adding gyroMinX to shift range to 0 - 180
+  int mouseStepY = mouseMinStepY + (gyroY + gyroMinY) * mouseLinearScaleY / gyroMinY;
+  Serial.print(mouseStepX);
+  Serial.print("\t");
+  Serial.print(mouseStepY);
+  Serial.print("\t");
+  //.. and another way = a x2 or exponential formula
+  x = map(gyroX, -gyroMinX, gyroMinX, -mouseStepX, mouseStepX);
+  y = map(gyroY, -gyroMinY, gyroMinY, -mouseStepY, mouseStepY);
+  Serial.print(x);
+  Serial.print("\t");
+  Serial.println(y);
+#endif LINEARGROWTH
+
+
+  // Process the "Toggle en/disable mouse" switch
+  deBounceToggle.update ( );
+  // En/disable mouse & LED
+  if ( deBounceToggle.read() == HIGH){
+    if ( enablingMouse) {
+      mouseEnabled = !mouseEnabled;            //toggle mouse en/disable
+      enablingMouse = false;
+      //if (!mouseEnabled) Mouse.release();    // if disabling mouse, ALSO release left button!
+      digitalWrite(LED_PIN, mouseEnabled);
     }
+    else {
+      digitalWrite(LED_PIN, mouseEnabled);
+    }
+  } 
+  else {
+    enablingMouse = true;    // Setup to enable mouse AFTER switch released - avoids endless toggling 
+  }
+
+
+  // Action mouse buttons & movement  - if enabled
+  if (mouseEnabled) {
+    Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
 
     // Process left mouse button
     deBounceLeft.update ( );
     if ( deBounceLeft.read() == HIGH) {
-        Mouse.release();        // send mouse left button up/release to computer
+      Mouse.release();        // send mouse left button up/release to computer
     }
     else {
-        Mouse.press();        // send mouse left button press/down to computer
+      Mouse.press();        // send mouse left button press/down to computer
     }
 
-    // move mouse - if enabled
-    if (move_mouse) Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
-
-
-#endif
-
+  }
 }
+
+
+
 
 
 
