@@ -1,3 +1,7 @@
+// working pretty well with step method
+
+
+
 /* 
  Sensor has to be aligned correctly with your body.
  For finger/wrist/arm mouse align marker to point at tip of limb.
@@ -14,22 +18,6 @@
 
 // Have to use Free-IMU version of I2Cdev library - not one from Jeffs I2Cdev site/SVN
 
-/* TODO stuff:-
-
->>>>Check what freeIMU lib does if IMU buffer over-runs!!!!!!
-.. eg if add delays to main loop to control mouse update rate!
-or if serial console debug printing slows things down...
-
-
-More buttons OR 3/4 clicks to
- - reset cursor to center or highlihgt/flash
- - en/disable
- 
- ?/ any sign of freezing (uses SPI - NO not with MMU 6050 - only I2C)????
- so far NONE, 100% reliable for many many minutes :)
- dam - TWO lockups after ~ 1+hours
- 
- */
 
 // actually control the mouse - for real!
 // For now JUST using button to TOGGLE mouse on/off
