@@ -69,12 +69,14 @@ boolean enablingMouse = false;    // used as part of enable process
 //#define LINEARGROWTH
 //********************************************************************************
 
-// slow for small rotation/movement. faster for bigger
+// slow mouse movement for small rotation/movement. faster for bigger
 #ifdef STEPGROWTH
+// The parameter(s) below should be user adjustable from COMPUTER based configuration program!
 int step = 5;       // pitch or roll > step > step move mouse fast, else move slow!
 #endif
 
 #ifdef LINEARGROWTH
+// The parameters below should be user adjustable from COMPUTER based configuration program!
 // hmmm think about this & time between updates & thus how far/fast mouse cursor moves
 // + operating sys config of mouse behaviour
 int mouseMinStepX = 1;        // default for how MINIMUM distance mouse moves on screen every update
@@ -143,17 +145,17 @@ void loop() {
 
     my3IMU.getYawPitchRoll(ypr);    // read the gyro data
 
-    // Make sure you only use ONE of the mouse movement methods at a time!!!!!
-#ifdef STEPGROWTH
-    stepGrowth();               // if user moved a small amount, move mouse slowly, else move faster
-#endif
-#ifdef LINEARGROWTH
-    linearGrowth();            // dif algorithm to move mosue slow & fast - works but not that good.
-#endif LINEARGROWTH
+    // Calculate mouse relative movement distances x,y using chosen method
+    #ifdef STEPGROWTH
+        stepGrowth();          // if user moved a small amount, move mouse slowly, else move faster
+    #endif
+    #ifdef LINEARGROWTH
+        linearGrowth();        // dif algorithm to move mosue slow & fast - works but not that good.
+    #endif LINEARGROWTH
 
 
-    enableMouseControl();    // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
-    actionMouseButtons();    // Click computer mouse buttons according to button press, or gesture control
+    enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
+    moveMouseAndButtons();    // Click computer mouse buttons according to button press, or gesture control
 }
 
 
@@ -163,26 +165,29 @@ void loop() {
 // Subroutines and functions below here
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+// slow mouse movement for small rotation/movement. faster for bigger
 #ifdef STEPGROWTH
 inline void stepGrowth(){
-    // If last - current pitch or roll > step, move mouse fast, else move slow!
+    // If current pitch or roll > step, move mouse fast, else move slow!
     if ((abs(ypr[1]) > step) || (abs(ypr[2]) > step)){
-        x = map(ypr[1], -90, 90, -15, 15);
-        y = map(ypr[2], -90, 90, -15, 15);
+        x = map(ypr[1], -90, 90, -15, 15);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
+        y = map(ypr[2], -90, 90, -15, 15);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
     }
     else {
-        x = map(ypr[1], -90, 90, -3, 3);
-        y = map(ypr[2], -90, 90, -3, 3);
+        x = map(ypr[1], -90, 90, -3, 3);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
+        y = map(ypr[2], -90, 90, -3, 3);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
     }
 }
 #endif STEPGROWTH
 
+// slow mouse movement for small rotation/movement. faster for bigger
+// using a linear growth formula - works, but mouse control not that good with current code & parameters!
 #ifdef LINEARGROWTH
 inline void linearGrowth(){
     int gyroX = ypr[1];
     int gyroY = ypr[2];
 
-
+    // The parameters below should be user adjustable from COMPUTER based configuration program!
     int mouseStepX = mouseMinStepX + (gyroX + gyroMinX) * mouseLinearScaleX / gyroMinX;    // adding gyroMinX to shift range to 0 - 180
     int mouseStepY = mouseMinStepY + (gyroY + gyroMinY) * mouseLinearScaleY / gyroMinY;
     Serial.print(mouseStepX);
@@ -220,7 +225,7 @@ inline void enableMouseControl(){
 }
 
 
-inline void actionMouseButtons(){
+inline void moveMouseAndButtons(){
     // Action mouse buttons & movement  - if enabled
     if (mouseEnabled) {
         Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
