@@ -174,7 +174,7 @@ void setup() {
     //Serial.begin(115200);
     Wire.begin();
 
-    my3IMU.init(true);
+    my3IMU.init(true);                // parameter = "true" says init fast mode = 400KHz I2C 
 
     pinMode(TOGGLE_MOUSE_BUTTON,INPUT);
     pinMode(L_MOUSE_BUTTON,INPUT);

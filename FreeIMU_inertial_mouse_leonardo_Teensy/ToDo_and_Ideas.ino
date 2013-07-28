@@ -53,10 +53,27 @@ Code freezing - comms issue:-
         TEsting by spanner888
             o/s = openSuse 12.3 (x8x_64 linux 3.7.10 KDE 4.10.5) and Windows 7
             Teensy++ 2 (TWO Teensy++2 boards) and (TWO sensor boards) generic MPU6050 GY-521
+         
+         JUST found freeIMU header file needs config to YOUR hardware
+         had to uncomment two these lines:-
+             #define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
+              #define DISABLE_MAGN // Uncomment this line to disable the magnetometer in the sensor fusion algorithm
+         These change behaviour of prog - had to change step value from 5 to 10.
+         So are/were lockups due to wrong config???
             
          in previous projects - similar lockups with geniune Arduino Duemonlove & HCM 5... magnetometer & Grove Accelerometer
          using Arduino ANDother I2C libraries
-         
+
+output from speed test sample:
+Testing raw reading speed (average on 1024 samples):
+--> result: 1029 microseconds .... 1 milliseconds
+Testing calibrated reading speed (average on 1024 samples):
+--> result: 1298 microseconds .... 1 milliseconds
+Testing sensor fusion speed (average on 1024 samples):
+--> result: 2478 microseconds .... 2 milliseconds
+Looping again..
+
+
 ------------------------------------------------------
 
 OTHER goals & to do:-             
@@ -80,6 +97,10 @@ EASY & ready to hand way en/disable is IMPORTANT
    ??? instead of mouse + en/disable buttons
    an alternate way might be small thumb joystick - equiv 5 buttons
    does need to be very small to fit in between thumb & forefinger
+   
+   Prob ALSO still need switch/gesture control of en/disable 
+   as some people may wish to use this with a 'normal' keyboard, 
+   or other situations not yet considered!
 ------------------------------------------------------
 
 ------------------------------------------------------
@@ -94,6 +115,35 @@ EASY & ready to hand way en/disable is IMPORTANT
 >>>>Check what freeIMU lib does if IMU buffer over-runs!!!!!!
 .. eg if add delays to main loop to control mouse update rate!
 or if serial console debug printing slows things down...
+
+freeIMU has doxygen docs in lib folder
+
+.. and how to use interrupts gestures & no/motion detection, orientation etc
+    .. tap detection - sample code supplied
+tap sample ONLY uses raw_values[0], just reads - not using interrupt
+freeIMU raw_values structure:
+      raw_values[0] = ax;    // acceleration x
+      raw_values[1] = ay;    // acceleration y
+      raw_values[2] = az;    // acceleration z
+      raw_values[3] = gx;    // gyro x
+      raw_values[4] = gy;    // gyro y
+      raw_values[5] = gz;    // gyro z
+    magn.getValues(&raw_values[6], &raw_values[7], &raw_values[8]);
+    raw_values[9] = temp;      ie temperature
+    raw_values[10] = press;    ie pressure
+
+Tap works nicely - gentle & harder taps are detected    
+if you try to shake device - need a VERY hard shake before is detected as tap = nice!
+
+
+
+
+????? thinking
+use #includes - so can switch between jeff/freeIMU AND keep main code (mostly) same???
+OR other way round - sep code for each BUT include main code :) - unconventional & possibly confusing!
+becasue really want to explore jeffs full(er) data/feature access - eg (no?)/motion detect, tap, orientation...
+
+
 ------------------------------------------------------
 
 ------------------------------------------------------
