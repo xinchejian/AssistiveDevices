@@ -42,23 +42,41 @@
 
 
 /*********************************************** 
-General how to info:
- Sensor has to be aligned correctly with your body.
- For finger/wrist/arm mouse align marker to point at tip of limb.
- For head mouse ... to be sorted out :)
- 
- Configuration / customisation
- For now adjust parameters directly in the code, compile and updload.
- Future plan is for computer GUI.
- 
- 
- Don't forget your operating system ALSO allows configuration of mouse & button behaviour.
- And if you are using any assistive software, it may also help adjust to meet indidvuals needs.
+ * General how to info:
+ * Sensor has to be aligned correctly with your body.
+ * For finger/wrist/arm mouse align marker to point at tip of limb.
+ * For head mouse ... to be sorted out :)
+ * 
+ * Configuration / customisation
+ * For now adjust parameters directly in the code, compile and updload.
+ * Future plan is for computer GUI.
+ * 
+ * 
+ * Don't forget your operating system ALSO allows configuration of mouse & button behaviour.
+ * And if you are using any assistive software, it may also help adjust to meet indidvuals needs.
  ***********************************************/
 
 /* Notes & programming info/tips
  Have to use Free-IMU version of I2Cdev library - not one from Jeffs I2Cdev site/SVN
  ?? This lib is BUNDLED with freeIMU - CHECK!!!!
+ 
+ vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv 
+ *** The freeIMU lib has some config to do INSIDE freeIMU.h
+ For hardware in use here - have to uncomment last two #defines (although was working with default commented out!)
+ ALSO had to change step var from 5 to 10!
+ 
+ 
+ // 3rd party boards. Please consider donating or buying a FreeIMU board to support this library development.
+ //#define SEN_10121 //IMU Digital Combo Board - 6 Degrees of Freedom ITG3200/ADXL345 SEN-10121 http://www.sparkfun.com/products/10121
+ //#define SEN_10736 //9 Degrees of Freedom - Razor IMU SEN-10736 http://www.sparkfun.com/products/10736
+ //#define SEN_10724 //9 Degrees of Freedom - Sensor Stick SEN-10724 http://www.sparkfun.com/products/10724
+ //#define SEN_10183 //9 Degrees of Freedom - Sensor Stick  SEN-10183 http://www.sparkfun.com/products/10183
+ //#define ARDUIMU_v3 //  DIYDrones ArduIMU+ V3 http://store.diydrones.com/ArduIMU_V3_p/kt-arduimu-30.htm or https://www.sparkfun.com/products/11055
+ #define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
+ 
+ #define DISABLE_MAGN // Uncomment this line to disable the magnetometer in the sensor fusion algorithm
+ 
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
  Starting with ALL the main loop functions as inline so that:-
  - code is readable
@@ -67,14 +85,8 @@ General how to info:
  */
 
 
-
-// For now JUST using button to TOGGLE mouse on/off
-boolean mouseEnabled = false;     // en/disable mouse movement
-boolean enablingMouse = false;    // used as part of enable process
-
-int watchDogCounter = 0;
-boolean watchDogLED = false;
-int watchDogLimit = 0;        // Control how fast LED flashes
+// ******* START OF USER CONFIGURATION 
+// You can change the variables here to change how the mouse behaves.
 
 //********************************************************************************
 // Make sure you only use ONE of the mouse movement methods at a time!!!!!
@@ -85,7 +97,7 @@ int watchDogLimit = 0;        // Control how fast LED flashes
 // slow mouse movement for small rotation/movement. faster for bigger
 #ifdef STEPGROWTH
 // The parameter(s) below should be user adjustable from COMPUTER based configuration program!
-int step = 5;       // pitch or roll > step > step move mouse fast, else move slow!
+int step = 10;       // pitch or roll > step > step move mouse fast, else move slow!
 #endif
 
 #ifdef LINEARGROWTH
@@ -99,6 +111,22 @@ int mouseLinearScaleY = 2;    // default for how MINIMUM distance mouse moves on
 int gyroMinX = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 int gyroMinY = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 #endif
+
+// ******* END OF USER CONFIGURATION 
+
+
+
+
+// For now JUST using button to TOGGLE mouse on/off
+boolean mouseEnabled = false;     // en/disable mouse movement
+boolean enablingMouse = false;    // used as part of enable process
+boolean leftMouseButtonPressed = false;
+
+int watchDogCounter = 0;
+boolean watchDogLED = false;
+int watchDogLimit = 0;        // Control how fast LED flashes
+
+
 
 // for "mouse" switches
 #include <Bounce.h>
@@ -159,25 +187,39 @@ void loop() {
         watchDogLimit = 150;         //flash faster when mouse enabled.
     else
         watchDogLimit = 500;         //flash slower when mouse DISabled.
-    
+
     if (watchDogCounter++ > watchDogLimit) {
-            digitalWrite(LED_PIN, watchDogLED);    // just toggle LED - over-ride the mouse enble LED use for now
-            watchDogCounter = 0;
-            watchDogLED = !watchDogLED;
+        digitalWrite(LED_PIN, watchDogLED);    // just toggle LED - over-ride the mouse enble LED use for now
+        watchDogCounter = 0;
+        watchDogLED = !watchDogLED;
     }
 
-//hmm - if lockups are due to coms/sensor issue 
-//then ONLY read data when mouse active - will reduce number of lockups
+    //hmm - if lockups are due to coms/sensor issue 
+    //then ONLY read data when mouse active - will reduce number of lockups
     my3IMU.getYawPitchRoll(ypr);    // read the gyro data
 
     // Calculate mouse relative movement distances x,y using chosen method
-    #ifdef STEPGROWTH
-        stepGrowth();          // if user moved a small amount, move mouse slowly, else move faster
-    #endif
-    #ifdef LINEARGROWTH
-        linearGrowth();        // dif algorithm to move mouse slow & fast - works but not that good.
-    #endif LINEARGROWTH
+#ifdef STEPGROWTH
+    stepGrowth();          // if user moved a small amount, move mouse slowly, else move faster
+#endif
+#ifdef LINEARGROWTH
+    linearGrowth();        // dif algorithm to move mouse slow & fast - works but not that good.
+#endif LINEARGROWTH
 
+
+    // for debugging - log some info to serial console WHILE en/disable button pressed
+    if (enablingMouse){
+        Serial.print(mouseEnabled);
+        Serial.print(", ");
+        Serial.print(ypr[1]);
+        Serial.print(", ");
+        Serial.print(ypr[2]);
+        Serial.print(", ");
+        Serial.print(x);
+        Serial.print(", ");
+        Serial.print(y);
+        Serial.println();
+    }
 
     enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
     moveMouseAndButtons();    // Click computer mouse buttons according to button press, or gesture control
@@ -215,16 +257,9 @@ inline void linearGrowth(){
     // The parameters below should be user adjustable from COMPUTER based configuration program!
     int mouseStepX = mouseMinStepX + (gyroX + gyroMinX) * mouseLinearScaleX / gyroMinX;    // adding gyroMinX to shift range to 0 - 180
     int mouseStepY = mouseMinStepY + (gyroY + gyroMinY) * mouseLinearScaleY / gyroMinY;
-    Serial.print(mouseStepX);
-    Serial.print("\t");
-    Serial.print(mouseStepY);
-    Serial.print("\t");
     //.. and another way = a x2 or exponential formula
     x = map(gyroX, -gyroMinX, gyroMinX, -mouseStepX, mouseStepX);
     y = map(gyroY, -gyroMinY, gyroMinY, -mouseStepY, mouseStepY);
-    Serial.print(x);
-    Serial.print("\t");
-    Serial.println(y);
 }
 #endif LINEARGROWTH
 
@@ -233,7 +268,7 @@ inline void enableMouseControl(){
     // Process the "Toggle en/disable mouse" switch
     deBounceToggle.update ( );
     // En/disable mouse & LED
-    if ( deBounceToggle.read() == HIGH){
+    if ( deBounceToggle.read() == HIGH ){
         if ( enablingMouse) {
             mouseEnabled = !mouseEnabled;            //toggle mouse en/disable
             enablingMouse = false;
@@ -252,42 +287,15 @@ inline void enableMouseControl(){
 
 inline void moveMouseAndButtons(){
 
-Serial.print(mouseEnabled);
-Serial.print(", ");
+    // ALWAYS Process left mouse button - in case using for debug serial print or something
+    deBounceLeft.update ( );
+    leftMouseButtonPressed = deBounceLeft.read();
 
     // Action mouse buttons & movement  - if enabled
     if (mouseEnabled) {
         Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
 
-
-
-
-
-/*MOUSE CURSOR CONTROL HAS STOPPED WORKING
-mouse button still works & is en/disabled as expected
- cutecom - data is changing
-... no change to code, apart form trying to debug - started working
-.. took multiple code uploads!!!!
-??did I do one power off/on - NOT sure, but thought so
-
-issue mouse on/off via button ok (mouse cursor control work) - BUT watchdog flashing always fast!
-re-prog, ditto EXCEPT mouse cursor NOT working (but left mouse button OK)
-
-power off/on
-ditto last time -  mouse cursor NOT working (but left mosue button OK)
-
-
-
-*/
-
-Serial.print(x);
-Serial.print(", ");
-Serial.print(y);
-Serial.print(", ");
-Serial.println();
-        // Process left mouse button
-        deBounceLeft.update ( );
-        if ( deBounceLeft.read() == HIGH) {
+        if ( leftMouseButtonPressed ) {
             Mouse.release();        // send mouse left button up/release to computer
         }
         else {
@@ -295,6 +303,7 @@ Serial.println();
         }
     }
 }
+
 
 
 

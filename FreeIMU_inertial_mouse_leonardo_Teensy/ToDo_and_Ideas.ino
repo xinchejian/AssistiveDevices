@@ -43,10 +43,20 @@ Code freezing - comms issue:-
            
     When a lockup occurs:-
         - Does watchdog LED still flash?
-        - does processor rest fix issue?
         - does upload code again fix issue?
+        - does processor reset fix issue?
         - do you have to unplug USB/power?
-        = what oerating system?
+        - what operating system?
+        - what processer - Teesny++ 2, ... AND what sensor
+        - any serial debug printing running?
+        
+        TEsting by spanner888
+            o/s = openSuse 12.3 (x8x_64 linux 3.7.10 KDE 4.10.5) and Windows 7
+            Teensy++ 2 (TWO Teensy++2 boards) and (TWO sensor boards) generic MPU6050 GY-521
+            
+         in previous projects - similar lockups with geniune Arduino Duemonlove & HCM 5... magnetometer & Grove Accelerometer
+         using Arduino ANDother I2C libraries
+         
 ------------------------------------------------------
 
 OTHER goals & to do:-             
