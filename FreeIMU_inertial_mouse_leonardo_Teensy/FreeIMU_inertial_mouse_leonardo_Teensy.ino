@@ -34,22 +34,31 @@
  */
 
 
-// working pretty well with step method
+// STATUS:- working pretty well with step method. 
+// See code comments & seperate file "ToDo_and_Ideas.ino" for more.
+// ** Please write your progress/research notes in "ToDo_and_Ideas.ino" or add MORE files,
+// and push often to the github repo, so that EVERYONE can keep up with the current work :) **
+// If you are comfortable/capable using git, then consider branching the code to work on features.
 
-/* General how to info:
+
+/*********************************************** 
+General how to info:
  Sensor has to be aligned correctly with your body.
  For finger/wrist/arm mouse align marker to point at tip of limb.
  For head mouse ... to be sorted out :)
  
  Configuration / customisation
- .... write something here!!!!!!
+ For now adjust parameters directly in the code, compile and updload.
+ Future plan is for computer GUI.
+ 
  
  Don't forget your operating system ALSO allows configuration of mouse & button behaviour.
- And if you are using any assistive software, it may also help.
- */
+ And if you are using any assistive software, it may also help adjust to meet indidvuals needs.
+ ***********************************************/
 
 /* Notes & programming info/tips
  Have to use Free-IMU version of I2Cdev library - not one from Jeffs I2Cdev site/SVN
+ ?? This lib is BUNDLED with freeIMU - CHECK!!!!
  
  Starting with ALL the main loop functions as inline so that:-
  - code is readable
@@ -62,6 +71,9 @@
 // For now JUST using button to TOGGLE mouse on/off
 boolean mouseEnabled = false;     // en/disable mouse movement
 boolean enablingMouse = false;    // used as part of enable process
+
+int watchDogCounter = 0;
+boolean watchDogLED = false;
 
 //********************************************************************************
 // Make sure you only use ONE of the mouse movement methods at a time!!!!!
@@ -142,6 +154,13 @@ void setup() {
 
 
 void loop() {
+    int watchDogLimit = 500;
+    if (mouseEnabled) watchDogLimit = 150;         //flash faster when mouse enabled.
+    if (watchDogCounter++ > watchDogLimit) {
+            digitalWrite(LED_PIN, watchDogLED);    // just toggle LED - over-ride the mouse enble LED use for now
+            watchDogCounter = 0;
+            watchDogLED = !watchDogLED;
+    }
 
     my3IMU.getYawPitchRoll(ypr);    // read the gyro data
 
@@ -150,7 +169,7 @@ void loop() {
         stepGrowth();          // if user moved a small amount, move mouse slowly, else move faster
     #endif
     #ifdef LINEARGROWTH
-        linearGrowth();        // dif algorithm to move mosue slow & fast - works but not that good.
+        linearGrowth();        // dif algorithm to move mouse slow & fast - works but not that good.
     #endif LINEARGROWTH
 
 
@@ -216,7 +235,7 @@ inline void enableMouseControl(){
             digitalWrite(LED_PIN, mouseEnabled);
         }
         else {
-            digitalWrite(LED_PIN, mouseEnabled);
+            //digitalWrite(LED_PIN, mouseEnabled);     // temp disabling this while playing with watchdog LED use
         }
     } 
     else {
