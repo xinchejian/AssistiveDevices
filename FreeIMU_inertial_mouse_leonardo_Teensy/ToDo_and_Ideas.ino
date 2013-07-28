@@ -46,6 +46,7 @@ Code freezing - comms issue:-
         - does processor rest fix issue?
         - does upload code again fix issue?
         - do you have to unplug USB/power?
+        = what oerating system?
 ------------------------------------------------------
 
 OTHER goals & to do:-             

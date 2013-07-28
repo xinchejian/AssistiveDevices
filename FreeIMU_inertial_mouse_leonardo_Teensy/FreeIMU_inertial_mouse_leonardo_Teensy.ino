@@ -74,6 +74,7 @@ boolean enablingMouse = false;    // used as part of enable process
 
 int watchDogCounter = 0;
 boolean watchDogLED = false;
+int watchDogLimit = 0;        // Control how fast LED flashes
 
 //********************************************************************************
 // Make sure you only use ONE of the mouse movement methods at a time!!!!!
@@ -154,14 +155,19 @@ void setup() {
 
 
 void loop() {
-    int watchDogLimit = 500;
-    if (mouseEnabled) watchDogLimit = 150;         //flash faster when mouse enabled.
+    if (mouseEnabled) 
+        watchDogLimit = 150;         //flash faster when mouse enabled.
+    else
+        watchDogLimit = 500;         //flash slower when mouse DISabled.
+    
     if (watchDogCounter++ > watchDogLimit) {
             digitalWrite(LED_PIN, watchDogLED);    // just toggle LED - over-ride the mouse enble LED use for now
             watchDogCounter = 0;
             watchDogLED = !watchDogLED;
     }
 
+//hmm - if lockups are due to coms/sensor issue 
+//then ONLY read data when mouse active - will reduce number of lockups
     my3IMU.getYawPitchRoll(ypr);    // read the gyro data
 
     // Calculate mouse relative movement distances x,y using chosen method
@@ -232,7 +238,7 @@ inline void enableMouseControl(){
             mouseEnabled = !mouseEnabled;            //toggle mouse en/disable
             enablingMouse = false;
             //if (!mouseEnabled) Mouse.release();    // if disabling mouse, ALSO release left button!
-            digitalWrite(LED_PIN, mouseEnabled);
+            //digitalWrite(LED_PIN, mouseEnabled);     // temp disabling this while playing with watchdog LED use
         }
         else {
             //digitalWrite(LED_PIN, mouseEnabled);     // temp disabling this while playing with watchdog LED use
@@ -245,10 +251,40 @@ inline void enableMouseControl(){
 
 
 inline void moveMouseAndButtons(){
+
+Serial.print(mouseEnabled);
+Serial.print(", ");
+
     // Action mouse buttons & movement  - if enabled
     if (mouseEnabled) {
         Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
 
+
+
+
+
+/*MOUSE CURSOR CONTROL HAS STOPPED WORKING
+mouse button still works & is en/disabled as expected
+ cutecom - data is changing
+... no change to code, apart form trying to debug - started working
+.. took multiple code uploads!!!!
+??did I do one power off/on - NOT sure, but thought so
+
+issue mouse on/off via button ok (mouse cursor control work) - BUT watchdog flashing always fast!
+re-prog, ditto EXCEPT mouse cursor NOT working (but left mouse button OK)
+
+power off/on
+ditto last time -  mouse cursor NOT working (but left mosue button OK)
+
+
+
+*/
+
+Serial.print(x);
+Serial.print(", ");
+Serial.print(y);
+Serial.print(", ");
+Serial.println();
         // Process left mouse button
         deBounceLeft.update ( );
         if ( deBounceLeft.read() == HIGH) {
