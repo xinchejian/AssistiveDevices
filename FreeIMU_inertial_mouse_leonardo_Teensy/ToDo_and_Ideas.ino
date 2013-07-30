@@ -19,6 +19,11 @@
 
 
 ------------------------------------------------------
+computer GUI for every operating system to allow configuration changes
+    ====>>> see seperate TAB above for "User_setup_and_configuration" that discussess this!
+------------------------------------------------------
+
+------------------------------------------------------
 Code freezing - comms issue:-
    ... it is waaaaaaaay better that Arduino I2C
    dam - TWO lockups after ~ 1+hours
@@ -156,14 +161,6 @@ becasue really want to explore jeffs full(er) data/feature access - eg (no?)/mot
 	    - suggested run prog, dumps data to spreadsheet, analyse, refine & update code params, ......
 ------------------------------------------------------
 
-------------------------------------------------------
-computer GUI for every operating system to allow configuration changes
-    - eg for mouse sensitivy, adjust orientation/offsets and other config params
-    - simplest = use Arduino GUI, change directly in code! .... is OK way, but not so end user freindly
-    
-    ** Note freeIMU has a CALIBRATION gui/process - check if required in for this project
-        ??maybe not - we do not need such high accuracy - just relative direction indication???
-------------------------------------------------------
 
 
 
