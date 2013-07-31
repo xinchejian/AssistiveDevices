@@ -61,7 +61,7 @@
  ?? This lib is BUNDLED with freeIMU - CHECK!!!!
  
  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv 
- *** The freeIMU lib has some config to do INSIDE freeIMU.h
+ *** The freeIMU lib has some config TODO INSIDE freeIMU.h
  For hardware in use here - have to uncomment last two #defines (although was working with default commented out!)
  ALSO had to change step var from 5 to 10!
  
@@ -112,6 +112,15 @@ int gyroMinX = 90;            // gyro range is +/- this value.... at least in st
 int gyroMinY = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 #endif
 
+//Select the pin number of the LED on the microcontroller board
+#define LED_PIN 6               // LED on pin 6 for Teensy++ 2, Teensy++ 1, Teensy 2 and Teensy 1.
+                                // Pin 13 on Leonardo, Teensy3
+// Uncomment either of both of these if your setup has the matching switch
+//#define HAS_ENABLE_SWITCH
+//#define HAS_LEFT_MOUSE_SWITCH
+
+//TODO - add sensor selection gyro, accelerometer, combined data, ...
+
 // ******* END OF USER CONFIGURATION 
 
 
@@ -122,24 +131,32 @@ boolean mouseEnabled = false;     // en/disable mouse movement
 boolean enablingMouse = false;    // used as part of enable process
 boolean leftMouseButtonPressed = false;
 
+//TODO - currently LED flashes slow if mouse control disabled, fast if enabled = OK!
+//    BUT there is NO watchdog functionality, other than LED flashes if processor is still looping :)
 int watchDogCounter = 0;
 boolean watchDogLED = false;
 int watchDogLimit = 0;        // Control how fast LED flashes
 
 
-
+#ifdef HAS_ENABLE_SWITCH | HAS_LEFT_MOUSE_SWITCH
 // for "mouse" switches
 #include <Bounce.h>
-
-#define TOGGLE_MOUSE_BUTTON 5
-#define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6
-#define LED_PIN 6               // LED on pin 6 for Teensy++ 2
 
 // Instantiate a Bounce object with a 5 millisecond debounce time
 Bounce deBounceToggle = Bounce( TOGGLE_MOUSE_BUTTON, 5 );
 Bounce deBounceLeft = Bounce( L_MOUSE_BUTTON, 5 );
+#endif
 
-int x;        // mouse relative movement
+#ifdef HAS_ENABLE_SWITCH
+#define TOGGLE_MOUSE_BUTTON 5
+#endif
+
+#ifdef HAS_LEFT_MOUSE_SWITCH
+#define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6
+#endif
+
+
+int x;        // mouse relative movement, derived from the user selected sensor (gyro, accelerometer, combined data, ...)
 int y;        // mouse relative movement
 
 
@@ -176,8 +193,12 @@ void setup() {
 
     my3IMU.init(true);                // parameter = "true" says init fast mode = 400KHz I2C 
 
+#ifdef HAS_ENABLE_SWITCH
     pinMode(TOGGLE_MOUSE_BUTTON,INPUT);
+#endif    
+#ifdef HAS_LEFT_MOUSE_SWITCH
     pinMode(L_MOUSE_BUTTON,INPUT);
+#endif    
     pinMode(LED_PIN,OUTPUT);
 }
 
@@ -222,7 +243,7 @@ void loop() {
     }
 
     enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
-    moveMouseAndButtons();    // Click computer mouse buttons according to button press, or gesture control
+    controlMouse();    // Click computer mouse buttons according to button press, or gesture control
 }
 
 
@@ -263,8 +284,10 @@ inline void linearGrowth(){
 }
 #endif LINEARGROWTH
 
-
+// en/disable ALL mouse control (cursor and buttons) as desired
 inline void enableMouseControl(){
+
+#ifdef HAS_ENABLE_SWITCH
     // Process the "Toggle en/disable mouse" switch
     deBounceToggle.update ( );
     // En/disable mouse & LED
@@ -282,14 +305,22 @@ inline void enableMouseControl(){
     else {
         enablingMouse = true;    // Setup to enable mouse AFTER switch released - avoids endless toggling 
     }
+#endif    
 }
 
+// Control mouse - move mouse cursor and de/select mouse buttons
+inline void controlMouse(){
 
-inline void moveMouseAndButtons(){
-
-    // ALWAYS Process left mouse button - in case using for debug serial print or something
-    deBounceLeft.update ( );
-    leftMouseButtonPressed = deBounceLeft.read();
+    // Control the mouse LEFT button via a switch { TO BE IMPLEMTENTED:- OR tap, shake or other gesture}
+    #ifdef HAS_LEFT_MOUSE_SWITCH
+        // ALWAYS Process left mouse button - in case using for debug serial print or something
+        deBounceLeft.update ( );
+        leftMouseButtonPressed = deBounceLeft.read();
+    #else
+        //TODO add tap/shake method to en/disable mouse control
+        // below just forcefully enables if NO enable switch!
+        mouseEnabled=true;
+    #endif    
 
     // Action mouse buttons & movement  - if enabled
     if (mouseEnabled) {

@@ -86,6 +86,8 @@ OTHER goals & to do:-
 - TEST on wrist, arm, head
 - some videos of device on finger, wrist, arm, head AND screen captures
 - gesture/tap/orientation OR accel to act as switches/cmds
+    .. freeIMU tap sample - think about using abs(accel), and exploring dif axis as well!
+    BUT FIRST look into jRowberg I2Cdev interupt tap & shake!
 - use as kb to send keys eg open browser, email, gazetalk etc, OR adj muse cfg....
 
 - MOUSE UPDATE RATE - review recent notes, check current code/Teensy RATE, check MMU sensor cfg rate (in cfg AND via log to memory, then dump to serial when mouse OFF. LOOKING TO SEE IF DATA REAL TIME, OR LAGGING/BUNCHED UP DUE TO BUFFERING **AND** IF RATE TOO SLOW/FAST

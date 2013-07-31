@@ -1,4 +1,4 @@
-
+/*
 
     - eg for mouse sensitivy, adjust orientation/offsets and other config params
     - simplest = use Arduino GUI, change directly in code! .... is OK way, but not so end user freindly
@@ -65,14 +65,14 @@ in sketchbook see on lib under attiny!
 
 sketchbook\_SORT OUT!\hardware Attiny - lots not compiling\tools\avr\avr\include\avr\eeprom.h
 
-/* Copyright (c) 2002, 2003, 2004, 2007 Marek Michalkiewicz
+ Copyright (c) 2002, 2003, 2004, 2007 Marek Michalkiewicz
    Copyright (c) 2005, 2006 Bjoern Haase
    Copyright (c) 2008 Atmel Corporation
    Copyright (c) 2008 Wouter van Gulik
 ....................
-/* $Id: eeprom.h,v 1.21.2.6 2008/08/19 22:10:39 arcanum Exp $ */
+ $Id: eeprom.h,v 1.21.2.6 2008/08/19 22:10:39 arcanum Exp $ 
 
-#ifndef _AVR_EEPROM_H_
+
 
 
 
@@ -124,4 +124,4 @@ and auto scan & click software
 ============================================================================
 ============================================================================
 ============================================================================
-
+*/
