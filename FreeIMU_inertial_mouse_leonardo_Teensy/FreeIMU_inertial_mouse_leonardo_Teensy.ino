@@ -122,8 +122,9 @@ int gyroMinY = 90;            // gyro range is +/- this value.... at least in st
 
 
 //Select the pin number of the LED on the microcontroller board
-#define LED_PIN 6               // LED on pin 6 for Teensy++ 2, Teensy++ 1, Teensy 2 and Teensy 1.
+#define LED_PIN 17               // LED on pin 6 for Teensy++ 2, Teensy++ 1, Teensy 2 and Teensy 1.
                                 // Pin 13 on Leonardo, Teensy3
+                                // Pin 17 or 11 on Xadow
 
 // Uncomment either of both of these if your setup has the matching switch
 //#define HAS_ENABLE_SWITCH
@@ -136,7 +137,9 @@ int gyroMinY = 90;            // gyro range is +/- this value.... at least in st
 //***************************************************************************************************
 //***************************************************************************************************
 
-
+// mouse will not move from sensor control,
+//BUT mouse move commadns (0,0,0) still sent - to keep testing realsistic!
+#define DEBUG_FORCE_NO_MOUSE_MOVE
 
 // For now JUST using button to TOGGLE mouse on/off
 boolean mouseEnabled = false;     // en/disable mouse movement
@@ -197,7 +200,18 @@ FreeIMU my3IMU = FreeIMU();
 
 
 void setup() {
+    pinMode(LED_PIN,OUTPUT);
+
+    // debugging - does mouse.begin & later mousemove interfere with code uploading?
+    for (int i = 0; i <20; i++){
+        digitalWrite(LED_PIN, LOW);
+        delay(250);
+        digitalWrite(LED_PIN, HIGH);
+        delay(250);
+    }
+
     Mouse.begin();
+    Mouse.release();        // seems like mouse button is pressed!
     //Serial.begin(115200);
     Wire.begin();
 
@@ -209,7 +223,6 @@ void setup() {
 #ifdef HAS_LEFT_MOUSE_SWITCH
     pinMode(L_MOUSE_BUTTON,INPUT);
 #endif
-    pinMode(LED_PIN,OUTPUT);
 }
 
 
@@ -351,7 +364,11 @@ inline void controlMouse(){
 
     // Action mouse buttons & movement  - if enabled
     if (mouseEnabled) {
-        Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
+        #ifdef DEBUG_FORCE_NO_MOUSE_MOVE
+            Mouse.move(0, 0, 0);    // debugging, don't move mouse, but still send command - want realistic debugging!!!
+        #else
+            Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
+        #endif // def
 
         if ( leftMouseButtonPressed ) {
             Mouse.release();        // send mouse left button up/release to computer
