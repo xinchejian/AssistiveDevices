@@ -101,6 +101,9 @@
 //#define LINEARGROWTH
 //********************************************************************************
 
+//endable simple tap detection
+#define FREEIMU_TAP
+
 // Variables common to STEPGROWTH and LINEARGROWTH
 int gyroMinX = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 int gyroMinY = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
@@ -163,9 +166,23 @@ int mouseLinearScaleY = 2;    // default for how MINIMUM distance mouse moves on
 //***************************************************************************************************
 //***************************************************************************************************
 
+//TO DO some of thse var might need to be user vars - move above!!!!
+#ifdef FREEIMU_TAP
+int raw_values[11];
+char str[512];
+float val[9], q[4];
+
+unsigned long tap_window_start, time_in_window;
+bool tap_in_window = 0;
+
+// values here are purely empirical
+const int tap_threshold = 19000;        //12000;
+const long tap_duration = 22000;        //19375;
+#endif
+
 // mouse will not move from sensor control,
 //BUT mouse move commadns (0,0,0) still sent - to keep testing realsistic!
-//#define DEBUG_FORCE_NO_MOUSE_MOVE
+#define DEBUG_FORCE_NO_MOUSE_MOVE
 
 // For now JUST using button to TOGGLE mouse on/off
 boolean mouseEnabled = false;     // en/disable mouse movement
@@ -228,6 +245,9 @@ FreeIMU my3IMU = FreeIMU();
 void setup() {
     pinMode(LED_PIN,OUTPUT);
 
+    Serial.begin(115200);
+Serial.print("howdy - debug wait for 10 seconds - does mouse.begin & later mousemove interfere with code uploading?") ;
+
     // debugging - does mouse.begin & later mousemove interfere with code uploading?
     for (int i = 0; i <20; i++){
         digitalWrite(LED_PIN, LOW);
@@ -238,10 +258,14 @@ void setup() {
 
     Mouse.begin();
 
-    //Serial.begin(115200);
     Wire.begin();
 
     my3IMU.init(true);                // parameter = "true" says init fast mode = 400KHz I2C
+
+#ifdef FREEIMU_TAP
+  my3IMU.accgyro.setFullScaleAccelRange(1); // set accelerometer to 4g range
+  delay(10);
+#endif
 
 #ifdef HAS_ENABLE_SWITCH
     pinMode(TOGGLE_MOUSE_BUTTON,INPUT);
@@ -263,10 +287,6 @@ void loop() {
         watchDogCounter = 0;
         watchDogLED = !watchDogLED;
     }
-
-    //hmm - if lockups are due to coms/sensor issue
-    //then ONLY read data when mouse active - will reduce number of lockups
-    my3IMU.getYawPitchRoll(ypr);    // read the gyro data
 
 //TODO - change these from #def to if or case - user needs to be able to swtich dynamically without recompiling code
     // Calculate mouse relative movement distances x,y using chosen method
@@ -293,6 +313,11 @@ void loop() {
     }
 
     enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
+
+    //hmm - if lockups are due to coms/sensor issue
+    //then ONLY read data when mouse active - will reduce number of lockups
+    my3IMU.getYawPitchRoll(ypr);    // read the gyro data
+
     controlMouse();    // Click computer mouse buttons according to button press, or gesture control
 }
 
@@ -378,7 +403,16 @@ inline void controlMouse(){
     #else
         //TODO add tap/shake method to en/disable mouse control
         // below just forcefully enables if NO enable switch!
-        mouseEnabled=true;
+        //mouseEnabled=true;
+
+        //TODO finish tap code here ALSO some overlap between BELOW AND enableMouseControl()!!!
+    upadateTapStatus();     // Check & ACT on virtual buttons BEFORE checking/moving mouse to avoid unwanted mouse movement!
+    if (tap_in_window){
+        mouseEnabled != mouseEnabled;   // just toggle for now - MAY NEED TO DO THE ENABLING?WAIT FOR "release" ie stop tapping!!!
+    }
+
+
+
     #endif
 
     // Moveme the mouse  - if enabled
@@ -392,6 +426,27 @@ inline void controlMouse(){
     }
 }
 
+inline void upadateTapStatus() {
+  my3IMU.getRawValues(raw_values);
+  int a_x = raw_values[0];
 
+  if(a_x > tap_threshold && !tap_in_window) {
+    tap_window_start = micros();
+    tap_in_window = true;
+  }
+
+  if(tap_in_window) {
+    time_in_window = micros() - tap_window_start;
+
+    if(a_x < tap_threshold && time_in_window < tap_duration) {
+      sprintf(str, "TAP! time: %dus\n", time_in_window);
+      Serial.print(str);
+      tap_in_window = false;
+    }
+    if(time_in_window > tap_duration) { // time exceded
+      tap_in_window = false;
+    }
+  }
+}
 
 
