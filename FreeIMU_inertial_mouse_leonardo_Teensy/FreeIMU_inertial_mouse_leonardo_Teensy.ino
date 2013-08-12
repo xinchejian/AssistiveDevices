@@ -122,8 +122,8 @@ int gyroMinY = 90;            // gyro range is +/- this value.... at least in st
                                 // Pin 13 on Leonardo, Teensy3
 
 // Uncomment either of both of these if your setup has the matching switch
-#define HAS_ENABLE_SWITCH
-#define HAS_LEFT_MOUSE_SWITCH
+//#define HAS_ENABLE_SWITCH
+//#define HAS_LEFT_MOUSE_SWITCH
 
 //TODO - add sensor selection gyro, accelerometer, combined data, ...
 
@@ -146,18 +146,15 @@ boolean watchDogLED = false;
 int watchDogLimit = 0;        // Control how fast LED flashes
 
 
-#ifdef HAS_ENABLE_SWITCH | HAS_LEFT_MOUSE_SWITCH
-// for "mouse" switches
-#include <Bounce.h>  // Has been working, but under windows7, just had to edit bounce.cpp & rename WProgam.h to Arduino.h
-#endif
-
 #ifdef HAS_LEFT_MOUSE_SWITCH
+#include <Bounce.h>  // Has been working, but under windows7, just had to edit bounce.cpp & rename WProgam.h to Arduino.h
 #define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6
 // Instantiate a Bounce object with a 5 millisecond debounce time
 Bounce deBounceLeft = Bounce( L_MOUSE_BUTTON, 5 );
 #endif
 
 #ifdef HAS_ENABLE_SWITCH
+#include <Bounce.h>  // Has been working, but under windows7, just had to edit bounce.cpp & rename WProgam.h to Arduino.h
 #define TOGGLE_MOUSE_BUTTON 5
 // Instantiate a Bounce object with a 5 millisecond debounce time
 Bounce deBounceToggle = Bounce( TOGGLE_MOUSE_BUTTON, 5 );
