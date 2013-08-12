@@ -85,6 +85,9 @@
  */
 
 
+//***************************************************************************************************
+//***************************************************************************************************
+//***************************************************************************************************
 // ******* START OF USER CONFIGURATION 
 // You can change the variables here to change how the mouse behaves.
 
@@ -100,6 +103,7 @@
 int step = 10;       // pitch or roll > step > step move mouse fast, else move slow!
 #endif
 
+//Note code for this works ... but not very well - needs improving!
 #ifdef LINEARGROWTH
 // The parameters below should be user adjustable from COMPUTER based configuration program!
 // hmmm think about this & time between updates & thus how far/fast mouse cursor moves
@@ -112,17 +116,21 @@ int gyroMinX = 90;            // gyro range is +/- this value.... at least in st
 int gyroMinY = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 #endif
 
+
 //Select the pin number of the LED on the microcontroller board
 #define LED_PIN 6               // LED on pin 6 for Teensy++ 2, Teensy++ 1, Teensy 2 and Teensy 1.
                                 // Pin 13 on Leonardo, Teensy3
+
 // Uncomment either of both of these if your setup has the matching switch
-//#define HAS_ENABLE_SWITCH
-//#define HAS_LEFT_MOUSE_SWITCH
+#define HAS_ENABLE_SWITCH
+#define HAS_LEFT_MOUSE_SWITCH
 
 //TODO - add sensor selection gyro, accelerometer, combined data, ...
 
 // ******* END OF USER CONFIGURATION 
-
+//***************************************************************************************************
+//***************************************************************************************************
+//***************************************************************************************************
 
 
 
@@ -140,20 +148,21 @@ int watchDogLimit = 0;        // Control how fast LED flashes
 
 #ifdef HAS_ENABLE_SWITCH | HAS_LEFT_MOUSE_SWITCH
 // for "mouse" switches
-#include <Bounce.h>
+#include <Bounce.h>  // Has been working, but under windows7, just had to edit bounce.cpp & rename WProgam.h to Arduino.h
+#endif
 
+#ifdef HAS_LEFT_MOUSE_SWITCH
+#define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6
 // Instantiate a Bounce object with a 5 millisecond debounce time
-Bounce deBounceToggle = Bounce( TOGGLE_MOUSE_BUTTON, 5 );
 Bounce deBounceLeft = Bounce( L_MOUSE_BUTTON, 5 );
 #endif
 
 #ifdef HAS_ENABLE_SWITCH
 #define TOGGLE_MOUSE_BUTTON 5
+// Instantiate a Bounce object with a 5 millisecond debounce time
+Bounce deBounceToggle = Bounce( TOGGLE_MOUSE_BUTTON, 5 );
 #endif
 
-#ifdef HAS_LEFT_MOUSE_SWITCH
-#define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6
-#endif
 
 
 int x;        // mouse relative movement, derived from the user selected sensor (gyro, accelerometer, combined data, ...)
