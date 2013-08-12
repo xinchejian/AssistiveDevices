@@ -1,18 +1,25 @@
 /* TODO stuff:-
 
+mouse update rate
+    - what should it be?
+    - what is too slow?
+    - issues with interrupts &/or FIFO overflow (how does freeIMU handle overflows?)
+    - Teensy vs Xadow. Just have first impression can see each individual Xadow mouse move = fast jumps.
+        need to recheck Teensy!
+
 ------------------------------------------------------
-*** MAIN GOAL ATM = easy use 
+*** MAIN GOAL ATM = easy use
     - eg easy click button, type onscreen kb, **radio/check boxes**
     **SUCCESS** with step method!!!! ... but does need more people to test.
     Linear method is not there yet!
-    
+
     NOW - need to work:-
         - on PHYSICAL mounting of sensor, processor & cables
             eg - velcro, or glove for limbs, and maybe headband for head.
         - extensive real life usage = use THIS device as mouse FULL TIME & and on different body locations!
-    
+
  2nd goal - MANY MOUSE MODES - because these give user different PHYSICAL MOVEMENTS for mouse control
-            - tilt(gyro), 
+            - tilt(gyro),
             - trad mouse move but in air = linear movement (accel TRY REDUCED G RANGE &/OR ADD MOVING AV)
             - QUATERNIONS (W,X,Y,Z) =SO JUST TRY X,Y OR Z,Y PARTS ONLY!!!!!
 ------------------------------------------------------
@@ -42,10 +49,10 @@ Code freezing - comms issue:-
             ... but what if sensor locked up
                 soft reset sensor via code??
                 does sensor have reset pin?
-                
+
            research Arduino watchdog
-           
-           
+
+
     When a lockup occurs:-
         - Does watchdog LED still flash?
         - does upload code again fix issue?
@@ -54,18 +61,18 @@ Code freezing - comms issue:-
         - what operating system?
         - what processer - Teesny++ 2, ... AND what sensor
         - any serial debug printing running?
-        
+
         TEsting by spanner888
             o/s = openSuse 12.3 (x8x_64 linux 3.7.10 KDE 4.10.5) and Windows 7
             Teensy++ 2 (TWO Teensy++2 boards) and (TWO sensor boards) generic MPU6050 GY-521
-         
+
          JUST found freeIMU header file needs config to YOUR hardware
          had to uncomment two these lines:-
              #define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
               #define DISABLE_MAGN // Uncomment this line to disable the magnetometer in the sensor fusion algorithm
          These change behaviour of prog - had to change step value from 5 to 10.
          So are/were lockups due to wrong config???
-            
+
          in previous projects - similar lockups with geniune Arduino Duemonlove & HCM 5... magnetometer & Grove Accelerometer
          using Arduino ANDother I2C libraries
 
@@ -81,7 +88,7 @@ Looping again..
 
 ------------------------------------------------------
 
-OTHER goals & to do:-             
+OTHER goals & to do:-
 - try offset to cfg sensor & body alignment
 - TEST on wrist, arm, head
 - some videos of device on finger, wrist, arm, head AND screen captures
@@ -92,8 +99,8 @@ OTHER goals & to do:-
 
 - MOUSE UPDATE RATE - review recent notes, check current code/Teensy RATE, check MMU sensor cfg rate (in cfg AND via log to memory, then dump to serial when mouse OFF. LOOKING TO SEE IF DATA REAL TIME, OR LAGGING/BUNCHED UP DUE TO BUFFERING **AND** IF RATE TOO SLOW/FAST
     - from watchdog LED - 2000 loops is about 3 seconds, so about 666 loops/second WITH CURRENT CODE!
-    
-    
+
+
 More buttons, double and maybe triple clicking
 
 ------------------------------------------------------
@@ -104,9 +111,9 @@ EASY & ready to hand way en/disable is IMPORTANT
    ??? instead of mouse + en/disable buttons
    an alternate way might be small thumb joystick - equiv 5 buttons
    does need to be very small to fit in between thumb & forefinger
-   
-   Prob ALSO still need switch/gesture control of en/disable 
-   as some people may wish to use this with a 'normal' keyboard, 
+
+   Prob ALSO still need switch/gesture control of en/disable
+   as some people may wish to use this with a 'normal' keyboard,
    or other situations not yet considered!
 ------------------------------------------------------
 
@@ -139,7 +146,7 @@ freeIMU raw_values structure:
     raw_values[9] = temp;      ie temperature
     raw_values[10] = press;    ie pressure
 
-Tap works nicely - gentle & harder taps are detected    
+Tap works nicely - gentle & harder taps are detected
 if you try to shake device - need a VERY hard shake before is detected as tap = nice!
 
 
@@ -167,7 +174,7 @@ becasue really want to explore jeffs full(er) data/feature access - eg (no?)/mot
 
 
 IGNORE FOR NOW!!!!!
-	- try mouse on = auto center cursor - just testing if OK - add sep switch/action to trigger 
+	- try mouse on = auto center cursor - just testing if OK - add sep switch/action to trigger
 		  - CAN'T DO easliy from Arduino Mouse cmd - only relative
 		  - o/s mouse cfg, eg press ctl to highlight mouse, or some other o/s API.......
 

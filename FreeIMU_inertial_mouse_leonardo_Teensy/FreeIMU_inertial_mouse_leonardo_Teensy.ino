@@ -101,10 +101,38 @@
 //#define LINEARGROWTH
 //********************************************************************************
 
+// Variables common to STEPGROWTH and LINEARGROWTH
+int gyroMinX = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+int gyroMinY = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+
 // slow mouse movement for small rotation/movement. faster for bigger
 #ifdef STEPGROWTH
 // The parameter(s) below should be user adjustable from COMPUTER based configuration program!
 int step = 10;       // pitch or roll > step > step move mouse fast, else move slow!
+
+// These varables cater for user with different amount of movement in any of the four directions!
+float mapLrgStepLeftX   = 5;
+float mapLrgStepRightX  = 5;
+float mapLrgStepUpY     = 5;
+float mapLrgStepDownY   = 5;
+
+float mapSmlStepLeftX   = 0.5;
+float mapSmlStepRightX  = 0.5;
+float mapSmlStepUpY     = 0.5;
+float mapSmlStepDownY   = 0.5;
+
+/* original setting used
+float mapLrgStepLeftX   = 15;
+float mapLrgStepRightX  = 15;
+float mapLrgStepUpY     = 15;
+float mapLrgStepDownY   = 15;
+
+float mapSmlStepLeftX   = 3;
+float mapSmlStepRightX  = 3;
+float mapSmlStepUpY     = 3;
+float mapSmlStepDownY   = 3;
+*/
+
 #endif
 
 //Note code for this works ... but not very well - needs improving!
@@ -116,8 +144,6 @@ int mouseMinStepX = 1;        // default for how MINIMUM distance mouse moves on
 int mouseMinStepY = 1;        // default for how MINIMUM distance mouse moves on screen every update
 int mouseLinearScaleX = 2;    // default for how MINIMUM distance mouse moves on screen every update
 int mouseLinearScaleY = 2;    // default for how MINIMUM distance mouse moves on screen every update
-int gyroMinX = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
-int gyroMinY = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 #endif
 
 
@@ -139,7 +165,7 @@ int gyroMinY = 90;            // gyro range is +/- this value.... at least in st
 
 // mouse will not move from sensor control,
 //BUT mouse move commadns (0,0,0) still sent - to keep testing realsistic!
-#define DEBUG_FORCE_NO_MOUSE_MOVE
+//#define DEBUG_FORCE_NO_MOUSE_MOVE
 
 // For now JUST using button to TOGGLE mouse on/off
 boolean mouseEnabled = false;     // en/disable mouse movement
@@ -211,7 +237,7 @@ void setup() {
     }
 
     Mouse.begin();
-    Mouse.release();        // seems like mouse button is pressed!
+
     //Serial.begin(115200);
     Wire.begin();
 
@@ -281,30 +307,16 @@ void loop() {
 #ifdef STEPGROWTH
 inline void stepGrowth(){
 
-    //TODO some/all map values should be TRANSLATED into user configurable settings.
-
     // Settings used with Xadow
     // If current pitch or roll > step, move mouse fast, else move slow!
     if ((abs(ypr[1]) > step) || (abs(ypr[2]) > step)){
-        x = map(ypr[1], -90, 90, -5, 5);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
-        y = map(ypr[2], -90, 90, -5, 5);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
+        x = map(ypr[1], -gyroMinX, gyroMinX, -mapLrgStepLeftX, mapLrgStepRightX);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
+        y = map(ypr[2], -gyroMinY, gyroMinY, -mapLrgStepUpY, mapLrgStepDownY);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
     }
     else {
-        x = map(ypr[1], -90, 90, -0.5, 0.5);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
-        y = map(ypr[2], -90, 90, -0.5, 0.5);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
+        x = map(ypr[1], -gyroMinX, gyroMinX, -mapSmlStepLeftX, mapSmlStepRightX);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
+        y = map(ypr[2], -gyroMinY, gyroMinY, -mapSmlStepUpY, mapSmlStepDownY);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
     }
-/*
-    // original setting used
-    // If current pitch or roll > step, move mouse fast, else move slow!
-    if ((abs(ypr[1]) > step) || (abs(ypr[2]) > step)){
-        x = map(ypr[1], -90, 90, -15, 15);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
-        y = map(ypr[2], -90, 90, -15, 15);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
-    }
-    else {
-        x = map(ypr[1], -90, 90, -3, 3);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
-        y = map(ypr[2], -90, 90, -3, 3);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
-    }
-*/
 }
 #endif STEPGROWTH
 
@@ -356,19 +368,6 @@ inline void controlMouse(){
         // ALWAYS Process left mouse button - in case using for debug serial print or something
         deBounceLeft.update ( );
         leftMouseButtonPressed = deBounceLeft.read();
-    #else
-        //TODO add tap/shake method to en/disable mouse control
-        // below just forcefully enables if NO enable switch!
-        mouseEnabled=true;
-    #endif
-
-    // Action mouse buttons & movement  - if enabled
-    if (mouseEnabled) {
-        #ifdef DEBUG_FORCE_NO_MOUSE_MOVE
-            Mouse.move(0, 0, 0);    // debugging, don't move mouse, but still send command - want realistic debugging!!!
-        #else
-            Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
-        #endif // def
 
         if ( leftMouseButtonPressed ) {
             Mouse.release();        // send mouse left button up/release to computer
@@ -376,6 +375,20 @@ inline void controlMouse(){
         else {
             Mouse.press();        // send mouse left button press/down to computer
         }
+    #else
+        //TODO add tap/shake method to en/disable mouse control
+        // below just forcefully enables if NO enable switch!
+        mouseEnabled=true;
+    #endif
+
+    // Moveme the mouse  - if enabled
+    if (mouseEnabled) {
+        #ifdef DEBUG_FORCE_NO_MOUSE_MOVE
+            Mouse.move(0, 0, 0);    // debugging, don't move mouse, but still send command - want realistic debugging!!!
+        #else
+            Mouse.move(-x, y, 0);    // 3rd parameter = scroll wheel movement
+        #endif // def
+
     }
 }
 
