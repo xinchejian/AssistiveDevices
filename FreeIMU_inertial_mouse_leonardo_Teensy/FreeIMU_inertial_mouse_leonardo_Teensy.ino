@@ -17,7 +17,7 @@
  Credits:-
  Code is based in part on sample & other code from:-
  - Arduino bounce library bounce example code
- - FreeIMU library sample "inertial mouse leonardo". author Fabio Varesano - fvaresano@yahoo.it
+ - FreeIMU library sample "inertial mouse leonardo", "tap_detection" . author Fabio Varesano - fvaresano@yahoo.it
  - Could probably ONLY use Jeff Rowbergs great I2Cdev lib instead of freeIMU (which also uses a different version of Jeff Rowbergs I2Cdev lib)
  - All the direct and many indirect contributers from Xinchejian :)
 
@@ -166,6 +166,8 @@ int mouseLinearScaleY = 2;    // default for how MINIMUM distance mouse moves on
 //***************************************************************************************************
 //***************************************************************************************************
 
+
+
 //TO DO some of thse var might need to be user vars - move above!!!!
 #ifdef FREEIMU_TAP
 int raw_values[11];
@@ -176,13 +178,13 @@ unsigned long tap_window_start, time_in_window;
 bool tap_in_window = 0;
 
 // values here are purely empirical
-const int tap_threshold = 19000;        //12000;
+const int tap_threshold = 8000;        //12000;
 const long tap_duration = 22000;        //19375;
 #endif
 
 // mouse will not move from sensor control,
-//BUT mouse move commadns (0,0,0) still sent - to keep testing realsistic!
-#define DEBUG_FORCE_NO_MOUSE_MOVE
+//BUT mouse move commands (0,0,0) still sent - to keep testing realsistic!
+//#define DEBUG_FORCE_NO_MOUSE_MOVE
 
 // For now JUST using button to TOGGLE mouse on/off
 boolean mouseEnabled = false;     // en/disable mouse movement
@@ -246,7 +248,7 @@ void setup() {
     pinMode(LED_PIN,OUTPUT);
 
     Serial.begin(115200);
-Serial.print("howdy - debug wait for 10 seconds - does mouse.begin & later mousemove interfere with code uploading?") ;
+Serial.println("howdy - debug wait for 10 seconds - does mouse.begin & later mousemove interfere with code uploading?") ;
 
     // debugging - does mouse.begin & later mousemove interfere with code uploading?
     for (int i = 0; i <20; i++){
@@ -255,6 +257,7 @@ Serial.print("howdy - debug wait for 10 seconds - does mouse.begin & later mouse
         digitalWrite(LED_PIN, HIGH);
         delay(250);
     }
+Serial.println("AFTER - debug wait for 10 seconds") ;
 
     Mouse.begin();
 
@@ -312,8 +315,11 @@ void loop() {
         Serial.println();
     }
 
+#ifdef HAS_ENABLE_SWITCH
+    // current code is ONLY for physical switch, not the virtual tap switch
+    // look into merging .......
     enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
-
+#endif
     //hmm - if lockups are due to coms/sensor issue
     //then ONLY read data when mouse active - will reduce number of lockups
     my3IMU.getYawPitchRoll(ypr);    // read the gyro data
@@ -406,16 +412,18 @@ inline void controlMouse(){
         //mouseEnabled=true;
 
         //TODO finish tap code here ALSO some overlap between BELOW AND enableMouseControl()!!!
-    upadateTapStatus();     // Check & ACT on virtual buttons BEFORE checking/moving mouse to avoid unwanted mouse movement!
-    if (tap_in_window){
-        mouseEnabled != mouseEnabled;   // just toggle for now - MAY NEED TO DO THE ENABLING?WAIT FOR "release" ie stop tapping!!!
+    // Check & ACT on virtual buttons BEFORE checking/moving mouse to avoid unwanted mouse movement!
+    if (upadateTapStatus()){
+        mouseEnabled = !mouseEnabled;   // just toggle for now - MAY NEED TO DO THE ENABLING?WAIT FOR "release" ie stop tapping!!!
+        // dumb wating for tapping to stop
+        delay(300);     // prob no need delay when serial printing!
     }
 
 
 
     #endif
 
-    // Moveme the mouse  - if enabled
+    // Move the mouse  - if enabled
     if (mouseEnabled) {
         #ifdef DEBUG_FORCE_NO_MOUSE_MOVE
             Mouse.move(0, 0, 0);    // debugging, don't move mouse, but still send command - want realistic debugging!!!
@@ -426,7 +434,7 @@ inline void controlMouse(){
     }
 }
 
-inline void upadateTapStatus() {
+inline boolean upadateTapStatus() {
   my3IMU.getRawValues(raw_values);
   int a_x = raw_values[0];
 
@@ -439,14 +447,17 @@ inline void upadateTapStatus() {
     time_in_window = micros() - tap_window_start;
 
     if(a_x < tap_threshold && time_in_window < tap_duration) {
-      sprintf(str, "TAP! time: %dus\n", time_in_window);
-      Serial.print(str);
+      //sprintf(str, "TAP! time: %dus\n", time_in_window);
+      //Serial.print(str);
       tap_in_window = false;
+      return true;
     }
     if(time_in_window > tap_duration) { // time exceded
       tap_in_window = false;
+      return false;
     }
   }
+    return false;
 }
 
 
