@@ -414,10 +414,10 @@ inline void controlMouse(){
 
         // trying tap for mouse left button control
         if ( upadateTapStatus() ) {
-            Mouse.release();        // send mouse left button up/release to computer
+            Mouse.press();        // send mouse left button press/down to computer
         }
         else {
-            Mouse.press();        // send mouse left button press/down to computer
+            Mouse.release();        // send mouse left button up/release to computer
         }
 
 //Here is a SIMPLE tap/shake method to en/disable mouse control
