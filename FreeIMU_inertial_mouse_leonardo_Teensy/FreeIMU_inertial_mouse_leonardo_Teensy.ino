@@ -178,7 +178,7 @@ unsigned long tap_window_start, time_in_window;
 bool tap_in_window = 0;
 
 // values here are purely empirical
-const int tap_threshold = 8000;        //12000;
+const int tap_threshold = 10000;        //12000;
 const long tap_duration = 22000;        //19375;
 #endif
 
@@ -407,18 +407,33 @@ inline void controlMouse(){
             Mouse.press();        // send mouse left button press/down to computer
         }
     #else
-        //TODO add tap/shake method to en/disable mouse control
-        // below just forcefully enables if NO enable switch!
-        //mouseEnabled=true;
 
+
+        // below just forcefully enables if NO enable switch!
+        mouseEnabled=true;
+
+        // trying tap for mouse left button control
+        if ( upadateTapStatus() ) {
+            Mouse.release();        // send mouse left button up/release to computer
+        }
+        else {
+            Mouse.press();        // send mouse left button press/down to computer
+        }
+
+//Here is a SIMPLE tap/shake method to en/disable mouse control
+// Works :)
+// You can see if mouse is enabled or not by
+//  - see if mouse cursor moves (haha)
+//  - watching Arduino LED - flashes 1/2 sec on then 1/2 sec off if mouse disabled, and flashes about 3 per second if enabled.
+/*
         //TODO finish tap code here ALSO some overlap between BELOW AND enableMouseControl()!!!
     // Check & ACT on virtual buttons BEFORE checking/moving mouse to avoid unwanted mouse movement!
     if (upadateTapStatus()){
         mouseEnabled = !mouseEnabled;   // just toggle for now - MAY NEED TO DO THE ENABLING?WAIT FOR "release" ie stop tapping!!!
-        // dumb wating for tapping to stop
+        // dumb wating for tapping to stop - prob better to use same code as for the button!
         delay(300);     // prob no need delay when serial printing!
     }
-
+*/
 
 
     #endif
