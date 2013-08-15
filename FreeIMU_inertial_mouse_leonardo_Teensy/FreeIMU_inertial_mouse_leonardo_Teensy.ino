@@ -1,3 +1,7 @@
+// is the left & down ofset due to 1 - 0 -1 -2 -3 skewing......
+// plus already thinking about allowing for non level/center configuration!
+
+
 /*
      Xinchejian Hackerspace Shanghai Assistive Devices project aims to create
  many assistive devices that are easily customised to an individuals needs.
@@ -11,7 +15,7 @@
  This sub-project aims to create:-
  - a smaller, lighter device that can be used by several area of the body,
  including finger, wrist, arm, head, foot.
- - be highly configurable and customisable to meet and indivuals needs
+ - be highly configurable and customisable to meet an indivuals needs
  - relatively cheap and easy to get all of the parts
 
  Credits:-
@@ -89,40 +93,54 @@
  */
 
 
+// TODO - hey use the THIRD gyro as another input/switch!!!!
+// it could be a natural for point at screen = mouse on, relaxed finger/hand points away = mouse off!
+
+
 //***************************************************************************************************
 //***************************************************************************************************
 //***************************************************************************************************
 // ******* START OF USER CONFIGURATION
 // You can change the variables here to change how the mouse behaves.
 
-//********************************************************************************
-// Make sure you only use ONE of the mouse movement methods at a time!!!!!
-#define STEPGROWTH  // Use a (currently single) step in mouse movement speed
-//#define LINEARGROWTH
-//********************************************************************************
-
 //endable simple tap detection
 #define FREEIMU_TAP
 
-// Variables common to STEPGROWTH and LINEARGROWTH
-int gyroMinX = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
-int gyroMinY = 90;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+//TODO make sure ALL user content written in user language
+//    especially variable names, so gyro = nonsense - convert to WristRotation.....
+// and ALL the descriptive comments as well!!!!
+// all all the 3defines......
+// ** ESPECIAL CARE TO SEPERATE OUT **GROUPS** OF movements related to a particular setup
+// eg rotation versus linear movement
+// maybe this would be easier with some pictures ... and when done in the config app
+// that ALSO enable user to test each action and movement range/speed/fine control
+
+
+//TODO make sure all features documented, especially those turned on/off here!
+// eg switches, tap/shake.....
+
+
+// Variables common to STEPGROWTH
+int WristRotation = 60;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+int WristTilt = 40;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 
 // slow mouse movement for small rotation/movement. faster for bigger
-#ifdef STEPGROWTH
+
 // The parameter(s) below should be user adjustable from COMPUTER based configuration program!
-int step = 10;       // pitch or roll > step > step move mouse fast, else move slow!
+//int step = 15;       // pitch or roll > step > step move mouse fast, else move slow!
+int stepX = WristRotation / 4;         // roll > step > step move mouse fast, else move slow!
+int stepY = WristTilt / 3;             // pitch > step > step move mouse fast, else move slow!
 
 // These varables cater for user with different amount of movement in any of the four directions!
-float mapLrgStepLeftX   = 5;
-float mapLrgStepRightX  = 5;
-float mapLrgStepUpY     = 5;
-float mapLrgStepDownY   = 5;
+int mapLrgStepLeftX   = 5;
+int mapLrgStepRightX  = 5;
+int mapLrgStepUpY     = 5;
+int mapLrgStepDownY   = 5;
 
-float mapSmlStepLeftX   = 0.5;
-float mapSmlStepRightX  = 0.5;
-float mapSmlStepUpY     = 0.5;
-float mapSmlStepDownY   = 0.5;
+int mapSmlStepLeftX   = 1;    // 1 is smallest movement. 0 = no movement!
+int mapSmlStepRightX  = 1;
+int mapSmlStepUpY     = 1;
+int mapSmlStepDownY   = 1;
 
 /* original setting used
 float mapLrgStepLeftX   = 15;
@@ -136,28 +154,23 @@ float mapSmlStepUpY     = 3;
 float mapSmlStepDownY   = 3;
 */
 
-#endif
-
-//Note code for this works ... but not very well - needs improving!
-#ifdef LINEARGROWTH
-// The parameters below should be user adjustable from COMPUTER based configuration program!
-// hmmm think about this & time between updates & thus how far/fast mouse cursor moves
-// + operating sys config of mouse behaviour
-int mouseMinStepX = 1;        // default for how MINIMUM distance mouse moves on screen every update
-int mouseMinStepY = 1;        // default for how MINIMUM distance mouse moves on screen every update
-int mouseLinearScaleX = 2;    // default for how MINIMUM distance mouse moves on screen every update
-int mouseLinearScaleY = 2;    // default for how MINIMUM distance mouse moves on screen every update
-#endif
+// trying more ways to get finer mouse control
+// TODO - review if required - eg instead control IN HTE OPERATING system mouse configuration!!!
+int RotationScaleX = 5;
+int RotationScaleY = 5;
 
 
+//TODO maybe set up a #def for each supported board, that then in turn sets the correct LEDs etc for each board.
 //Select the pin number of the LED on the microcontroller board
-#define LED_PIN 17               // LED on pin 6 for Teensy++ 2, Teensy++ 1, Teensy 2 and Teensy 1.
+#define LED_PIN 6                // LED on pin 6 for Teensy++ 2, Teensy++ 1, Teensy 2 and Teensy 1.
                                 // Pin 13 on Leonardo, Teensy3
                                 // Pin 17 or 11 on Xadow
 
 // Uncomment either of both of these if your setup has the matching switch
 //#define HAS_ENABLE_SWITCH
 //#define HAS_LEFT_MOUSE_SWITCH
+//TODO move tap #def/s here as well
+
 
 //TODO - add sensor selection gyro, accelerometer, combined data, ...
 
@@ -280,51 +293,20 @@ Serial.println("AFTER - debug wait for 10 seconds") ;
 
 
 void loop() {
-    if (mouseEnabled)
-        watchDogLimit = 150;         //flash faster when mouse enabled.
-    else
-        watchDogLimit = 500;         //flash slower when mouse DISabled.
+    watchDogLed();      // ALSO can put any main loop debug stuff here ... just to keep loop looking clean :)
 
-    if (watchDogCounter++ > watchDogLimit) {
-        digitalWrite(LED_PIN, watchDogLED);    // just toggle LED - over-ride the mouse enble LED use for now
-        watchDogCounter = 0;
-        watchDogLED = !watchDogLED;
-    }
-
-//TODO - change these from #def to if or case - user needs to be able to swtich dynamically without recompiling code
-    // Calculate mouse relative movement distances x,y using chosen method
-#ifdef STEPGROWTH
-    stepGrowth();          // if user moved a small amount, move mouse slowly, else move faster
-#endif
-#ifdef LINEARGROWTH
-    linearGrowth();        // dif algorithm to move mouse slow & fast - works but not that good.
-#endif LINEARGROWTH
-
-
-    // for debugging - log some info to serial console WHILE en/disable button pressed
-    if (enablingMouse){
-        Serial.print(mouseEnabled);
-        Serial.print(", ");
-        Serial.print(ypr[1]);
-        Serial.print(", ");
-        Serial.print(ypr[2]);
-        Serial.print(", ");
-        Serial.print(x);
-        Serial.print(", ");
-        Serial.print(y);
-        Serial.println();
-    }
-
-#ifdef HAS_ENABLE_SWITCH
-    // current code is ONLY for physical switch, not the virtual tap switch
-    // look into merging .......
-    enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
-#endif
-    //hmm - if lockups are due to coms/sensor issue
-    //then ONLY read data when mouse active - will reduce number of lockups
+    //hmm - if lockups are due to coms/sensor issue - then ONLY read data when mouse active - will reduce number of lockups
     my3IMU.getYawPitchRoll(ypr);    // read the gyro data
 
-    controlMouse();    // Click computer mouse buttons according to button press, or gesture control
+    // Calculate mouse relative movement distances x,y using chosen method
+    stepGrowth();          // if user moved a small amount, move mouse slowly, else move faster
+
+#ifdef HAS_ENABLE_SWITCH
+    // current code is ONLY for physical switch, not the virtual tap switch - look into merging tap code!!!
+    enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
+#endif
+
+    controlMouse();    // Move mouse, click mouse buttons according to button press, or gesture control
 }
 
 
@@ -335,42 +317,45 @@ void loop() {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // slow mouse movement for small rotation/movement. faster for bigger
-#ifdef STEPGROWTH
 inline void stepGrowth(){
 
+//TODO - changes in mapping values do not seem to produce expected mouse movement changes!
+// try Serial.print input & output of map commands to see what is going on!
     // Settings used with Xadow
     // If current pitch or roll > step, move mouse fast, else move slow!
-    if ((abs(ypr[1]) > step) || (abs(ypr[2]) > step)){
-        x = map(ypr[1], -gyroMinX, gyroMinX, -mapLrgStepLeftX, mapLrgStepRightX);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
-        y = map(ypr[2], -gyroMinY, gyroMinY, -mapLrgStepUpY, mapLrgStepDownY);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
+    if (abs(ypr[1]) > stepX){
+Serial.print("LrgStep X");
+        x = map(ypr[1] / RotationScaleX, -WristRotation, WristRotation, -mapLrgStepLeftX, mapLrgStepRightX);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
+    }
+    else
+    {
+Serial.print("SmlStep X");
+        x = map(ypr[1] / RotationScaleX, -WristRotation, WristRotation, -mapSmlStepLeftX, mapSmlStepRightX);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
+    }
+    if (abs(ypr[2]) > stepY){
+Serial.print("\t\tLrgStep Y");
+        y = map(ypr[2] / RotationScaleY, -WristTilt, WristTilt, -mapLrgStepUpY, mapLrgStepDownY);                // The +/-15 should be user adjustable from COMPUTER based configuration program!
     }
     else {
-        x = map(ypr[1], -gyroMinX, gyroMinX, -mapSmlStepLeftX, mapSmlStepRightX);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
-        y = map(ypr[2], -gyroMinY, gyroMinY, -mapSmlStepUpY, mapSmlStepDownY);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
+Serial.print("\t\tSmlStep Y");
+        y = map(ypr[2] / RotationScaleY, -WristTilt, WristTilt, -mapSmlStepUpY, mapSmlStepDownY);                // The +/-3 should be user adjustable from COMPUTER based configuration program!
     }
+Serial.print("ypr[1], x = ");
+Serial.print(ypr[1]);
+Serial.print(", ");
+Serial.print(x);
+Serial.print(" ---- ");
+Serial.print("ypr[2], y = ");
+Serial.print(ypr[2]);
+Serial.print(", ");
+Serial.println(y);
 }
-#endif STEPGROWTH
 
-// slow mouse movement for small rotation/movement. faster for bigger
-// using a linear growth formula - works, but mouse control not that good with current code & parameters!
-#ifdef LINEARGROWTH
-inline void linearGrowth(){
-    int gyroX = ypr[1];
-    int gyroY = ypr[2];
-
-    // The parameters below should be user adjustable from COMPUTER based configuration program!
-    int mouseStepX = mouseMinStepX + (gyroX + gyroMinX) * mouseLinearScaleX / gyroMinX;    // adding gyroMinX to shift range to 0 - 180
-    int mouseStepY = mouseMinStepY + (gyroY + gyroMinY) * mouseLinearScaleY / gyroMinY;
-    //.. and another way = a x2 or exponential formula
-    x = map(gyroX, -gyroMinX, gyroMinX, -mouseStepX, mouseStepX);
-    y = map(gyroY, -gyroMinY, gyroMinY, -mouseStepY, mouseStepY);
-}
-#endif LINEARGROWTH
 
 // en/disable ALL mouse control (cursor and buttons) as desired
+#ifdef HAS_ENABLE_SWITCH
 inline void enableMouseControl(){
 
-#ifdef HAS_ENABLE_SWITCH
     // Process the "Toggle en/disable mouse" switch
     deBounceToggle.update ( );
     // En/disable mouse & LED
@@ -388,8 +373,8 @@ inline void enableMouseControl(){
     else {
         enablingMouse = true;    // Setup to enable mouse AFTER switch released - avoids endless toggling
     }
-#endif
 }
+#endif
 
 // Control mouse - move mouse cursor and de/select mouse buttons
 inline void controlMouse(){
@@ -410,10 +395,11 @@ inline void controlMouse(){
 
 
         // below just forcefully enables if NO enable switch!
-        mouseEnabled=true;
+        //mouseEnabled=true;
 
+//TODO  - tap/shake should be in #def
         // trying tap for mouse left button control
-        if ( upadateTapStatus() ) {
+        if ( updateTapStatus() ) {
             Mouse.press();        // send mouse left button press/down to computer
         }
         else {
@@ -428,7 +414,7 @@ inline void controlMouse(){
 /*
         //TODO finish tap code here ALSO some overlap between BELOW AND enableMouseControl()!!!
     // Check & ACT on virtual buttons BEFORE checking/moving mouse to avoid unwanted mouse movement!
-    if (upadateTapStatus()){
+    if (updateTapStatus()){
         mouseEnabled = !mouseEnabled;   // just toggle for now - MAY NEED TO DO THE ENABLING?WAIT FOR "release" ie stop tapping!!!
         // dumb wating for tapping to stop - prob better to use same code as for the button!
         delay(300);     // prob no need delay when serial printing!
@@ -449,7 +435,11 @@ inline void controlMouse(){
     }
 }
 
-inline boolean upadateTapStatus() {
+
+inline boolean updateTapStatus() {
+//TODO bad bad bad currenlty updateTapStatus ALSO trying to en/disable mouse!!!
+// when already have enableMouseControl .. although it currently set for SWICTH only
+// but have two totally dif approaces.....
   my3IMU.getRawValues(raw_values);
   int a_x = raw_values[0];
 
@@ -467,8 +457,16 @@ inline boolean upadateTapStatus() {
       tap_in_window = false;
       return true;
     }
-    if(time_in_window > tap_duration) { // time exceded
+    if(time_in_window > tap_duration) { // time exceeded
       tap_in_window = false;
+      mouseEnabled = !mouseEnabled;            // use this to toggle mouse dis/enabled! ?? tempory/testing??
+                                               // LED flashing speed changes ~1 per sec disabled, ~3/s enabled - see watchDogLimit
+/*
+      sprintf(str, "TAP! time: %dus, toggling mouse ", time_in_window);
+      Serial.print(str);
+      Serial.println(mouseEnabled);
+     delay(5000);
+*/
       return false;
     }
   }
@@ -476,3 +474,29 @@ inline boolean upadateTapStatus() {
 }
 
 
+inline void watchDogLed(){
+    if (mouseEnabled)
+        watchDogLimit = 150;         //flash faster when mouse enabled.
+    else
+        watchDogLimit = 500;         //flash slower when mouse DISabled.
+
+    if (watchDogCounter++ > watchDogLimit) {
+        digitalWrite(LED_PIN, watchDogLED);    // just toggle LED - over-ride the mouse enble LED use for now
+        watchDogCounter = 0;
+        watchDogLED = !watchDogLED;
+    }
+
+    // for debugging - log some info to serial console WHILE en/disable button pressed
+    if (enablingMouse){
+        Serial.print(mouseEnabled);
+        Serial.print(", ");
+        Serial.print(ypr[1]);
+        Serial.print(", ");
+        Serial.print(ypr[2]);
+        Serial.print(", ");
+        Serial.print(x);
+        Serial.print(", ");
+        Serial.print(y);
+        Serial.println();
+    }
+}
