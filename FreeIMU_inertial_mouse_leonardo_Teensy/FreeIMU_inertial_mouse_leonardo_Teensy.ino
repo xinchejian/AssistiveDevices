@@ -1,16 +1,11 @@
-// is the left & down ofset due to 1 - 0 -1 -2 -3 skewing......
-// plus already thinking about allowing for non level/center configuration!
-
-
-/*
+/* Introduction
      Xinchejian Hackerspace Shanghai Assistive Devices project aims to create
  many assistive devices that are easily customised to an individuals needs.
  Assistive Devices are anything, physical, electronic or software to help people accomplish everyday tasks.
  See http://wiki.xinchejian.com/wiki/Assistive_Devices
 
- This program uses a gyro (and maybe an accelerometer) to create an air-mouse, or wand to control a computing device.
-
- There are commercial devices for this purpose.
+ The projects are open source and everyone is encourage to contribute to the hardware, the software,
+ the documentation (in many languages) and especially in using the devices.
 
  This sub-project aims to create:-
  - a smaller, lighter device that can be used by several area of the body,
@@ -18,90 +13,57 @@
  - be highly configurable and customisable to meet an indivuals needs
  - relatively cheap and easy to get all of the parts
 
- Credits:-
- Code is based in part on sample & other code from:-
- - Arduino bounce library bounce example code
- - FreeIMU library sample "inertial mouse leonardo", "tap_detection" . author Fabio Varesano - fvaresano@yahoo.it
- - Could probably ONLY use Jeff Rowbergs great I2Cdev lib instead of freeIMU (which also uses a different version of Jeff Rowbergs I2Cdev lib)
- - All the direct and many indirect contributers from Xinchejian :)
+This program uses a gyros and accelerometers to create an air-mouse, or wand to control a computers mouse.
 
+While there are commercial devices for this purpose, but they tend to be less configurable.
+This project aims to give this device MANY more features than most (all?) current commercial devices!
 
- Licence:-
- Default Xinchejian licence is:-     CC by SA See http://creativecommons.org/licenses/by-sa/2.0/
+*/
 
- If this does not suit your needs, then get in touch to discuss.
+/* Air mouse capabilites / actions -  "what can you do with it?" - "How to use it?" - for a USER to read and understand!!!!!
+ie they need to know how to use every feature!
 
- If the above licence conflicts with licences of contributors code,
- then either youre gonna have to work it out,
- or go with the spirit of Open Source and sharing,
- or call your bank manager and lawyer!
- */
+ General how to info:
+    - Sensor has to be aligned correctly with your body.
+    - Try to aim or point the sensor at teh computer screen.
+    - For finger/wrist/arm mouse align marker to point at tip of limb.
+    - For head mouse ... to be sorted out :)
 
+Configuration / customisation
+    Note MANY features are optional and can be turned on/off in the code - see "USER CONFIGURATION" section
+    - in near? future this will be done using a computer user configuration application
 
-// STATUS:- working pretty well with step method.
-// See code comments & seperate file "ToDo_and_Ideas.ino" for more.
-// ** Please write your progress/research notes in "ToDo_and_Ideas.ino" or add MORE files,
-// and push often to the github repo, so that EVERYONE can keep up with the current work :) **
-// If you are comfortable/capable using git, then consider branching the code to work on features.
+    Don't forget your operating system ALSO allows configuration of mouse & button behaviour.
+    And if you are using any assistive software, it may also help adjust to meet indidvuals needs.
 
-// TODO - add virtual switches/tap/shake/other gestures
-// TODO - may need to switch to I2Cdev lib instead of freeIMU
-// TODO - add auto en/disable - if no movement (gyro or accel - just one/both?) for a few seconds.
+Mouse movement control
+    - Rotational control: - rotate wrist for horizontal mouse control, tilt up/down for vertical mouse control
+    - Traditional linear mouse control using the air mouse = TODO needs to be added!
+    - more - eg keyboard arrow control, but using real or virtual switches???
 
+Mouse button control
+    - currently a simple short horizontal shake = mouse left button down.
+    - if installed & enabled used the physical switches as mouse buttons
 
-/***********************************************
- * General how to info:
- * Sensor has to be aligned correctly with your body.
- * For finger/wrist/arm mouse align marker to point at tip of limb.
- * For head mouse ... to be sorted out :)
- *
- * Configuration / customisation
- * For now adjust parameters directly in the code, compile and updload.
- * Future plan is for computer GUI.
- *
- *
- * Don't forget your operating system ALSO allows configuration of mouse & button behaviour.
- * And if you are using any assistive software, it may also help adjust to meet indidvuals needs.
- ***********************************************/
+Additional actions
+    - none yet but looking to add a LOT more tap/shake/gesture etc actions
+        that can control more mouse buttons/scroll wheel and keyboard, .....
 
-/* Notes & programming info/tips
- Have to use Free-IMU version of I2Cdev library - not one from Jeffs I2Cdev site/SVN
- ?? This lib is BUNDLED with freeIMU - CHECK!!!!
+En/disable mouse movement
+    - LOONGER shake will toggle the mouse MOVEMENT on/off - at present the virtual button/s are left enabled!
 
- vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
- *** The freeIMU lib has some config TODO INSIDE freeIMU.h
- For hardware in use here - have to uncomment last two #defines (although was working with default commented out!)
- ALSO had to change step var from 5 to 10!
+En/disable mouse buttons
+    - only via the code at present.
 
-
- // 3rd party boards. Please consider donating or buying a FreeIMU board to support this library development.
- //#define SEN_10121 //IMU Digital Combo Board - 6 Degrees of Freedom ITG3200/ADXL345 SEN-10121 http://www.sparkfun.com/products/10121
- //#define SEN_10736 //9 Degrees of Freedom - Razor IMU SEN-10736 http://www.sparkfun.com/products/10736
- //#define SEN_10724 //9 Degrees of Freedom - Sensor Stick SEN-10724 http://www.sparkfun.com/products/10724
- //#define SEN_10183 //9 Degrees of Freedom - Sensor Stick  SEN-10183 http://www.sparkfun.com/products/10183
- //#define ARDUIMU_v3 //  DIYDrones ArduIMU+ V3 http://store.diydrones.com/ArduIMU_V3_p/kt-arduimu-30.htm or https://www.sparkfun.com/products/11055
- #define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
-
- #define DISABLE_MAGN // Uncomment this line to disable the magnetometer in the sensor fusion algorithm
-
- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
- Starting with ALL the main loop functions as inline so that:-
- - code is readable
- - just in case processing loop time is critical
- - can easily change this either way at any time.
- */
-
-
-// TODO - hey use the THIRD gyro as another input/switch!!!!
-// it could be a natural for point at screen = mouse on, relaxed finger/hand points away = mouse off!
+*/
 
 
 //***************************************************************************************************
 //***************************************************************************************************
 //***************************************************************************************************
-// ******* START OF USER CONFIGURATION
+// START OF USER CONFIGURATION
 // You can change the variables here to change how the mouse behaves.
+
 
 //endable simple tap detection
 #define FREEIMU_TAP
@@ -155,10 +117,9 @@ float mapSmlStepDownY   = 3;
 */
 
 // trying more ways to get finer mouse control
-// TODO - review if required - eg instead control IN HTE OPERATING system mouse configuration!!!
+// TODO - review if required - eg instead control IN THE OPERATING system mouse configuration!!!
 int RotationScaleX = 5;
 int RotationScaleY = 5;
-
 
 //TODO maybe set up a #def for each supported board, that then in turn sets the correct LEDs etc for each board.
 //Select the pin number of the LED on the microcontroller board
@@ -174,10 +135,90 @@ int RotationScaleY = 5;
 
 //TODO - add sensor selection gyro, accelerometer, combined data, ...
 
-// ******* END OF USER CONFIGURATION
+
+
+// END OF USER CONFIGURATION
+// End users, you can ignore everything below here, unless you want to improve the capability of this device,
+// if so, then please contribute to the code and share with the community (push back to github!)
 //***************************************************************************************************
 //***************************************************************************************************
 //***************************************************************************************************
+
+
+
+
+
+
+
+
+
+
+/* Licence(s)
+
+ Credits:-
+ Code is based in part on sample & other code from:-
+ - Arduino bounce library bounce example code
+ - FreeIMU library sample "inertial mouse leonardo", "tap_detection" . author Fabio Varesano - fvaresano@yahoo.it
+ - Could probably ONLY use Jeff Rowbergs great I2Cdev lib instead of freeIMU (which also uses a different version of Jeff Rowbergs I2Cdev lib)
+ - All the direct and many indirect contributers from Xinchejian :)
+
+
+ Licence:-
+ Default Xinchejian licence is:-     CC by SA See http://creativecommons.org/licenses/by-sa/2.0/
+
+ If this does not suit your needs, then get in touch to discuss.
+
+ If the above licence conflicts with licences of contributors code,
+ then either youre gonna have to work it out,
+ or go with the spirit of Open Source and sharing,
+ or call your bank manager and lawyer!
+ */
+
+
+// STATUS:- working pretty well with step method.
+// See code comments & seperate file "ToDo_and_Ideas.ino" for more.
+// ** Please write your progress/research notes in "ToDo_and_Ideas.ino" or add MORE files,
+// and push often to the github repo, so that EVERYONE can keep up with the current work :) **
+// If you are comfortable/capable using git, then consider branching the code to work on features.
+
+// TODO - add MORE virtual switches/tap/shake/other gestures
+// TODO - may need to switch to I2Cdev lib instead of freeIMU
+// TODO - add auto en/disable - if no movement (gyro or accel - just one/both?) for a few seconds.
+
+
+/* Notes & programming info/tips
+ Have to use Free-IMU version of I2Cdev library - not one from Jeffs I2Cdev site/SVN
+ ?? This lib is BUNDLED with freeIMU - CHECK!!!!
+
+ vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+ *** The freeIMU lib has some config TODO INSIDE freeIMU.h
+ For hardware in use here - have to uncomment last two #defines (although was working with default commented out!)
+ ALSO had to change step var from 5 to 10!
+
+
+ // 3rd party boards. Please consider donating or buying a FreeIMU board to support this library development.
+ //#define SEN_10121 //IMU Digital Combo Board - 6 Degrees of Freedom ITG3200/ADXL345 SEN-10121 http://www.sparkfun.com/products/10121
+ //#define SEN_10736 //9 Degrees of Freedom - Razor IMU SEN-10736 http://www.sparkfun.com/products/10736
+ //#define SEN_10724 //9 Degrees of Freedom - Sensor Stick SEN-10724 http://www.sparkfun.com/products/10724
+ //#define SEN_10183 //9 Degrees of Freedom - Sensor Stick  SEN-10183 http://www.sparkfun.com/products/10183
+ //#define ARDUIMU_v3 //  DIYDrones ArduIMU+ V3 http://store.diydrones.com/ArduIMU_V3_p/kt-arduimu-30.htm or https://www.sparkfun.com/products/11055
+ #define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
+
+ #define DISABLE_MAGN // Uncomment this line to disable the magnetometer in the sensor fusion algorithm
+
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ Starting with ALL the main loop functions as inline so that:-
+ - code is readable
+ - just in case processing loop time is critical
+ - can easily change this either way at any time.
+ */
+
+
+// TODO - hey use the THIRD gyro as another input/switch!!!!
+// it could be a natural for point at screen = mouse on, relaxed finger/hand points away = mouse off!
+
+
 
 
 
@@ -293,19 +334,28 @@ Serial.println("AFTER - debug wait for 10 seconds") ;
 
 
 void loop() {
+    // this is just for debugging
     watchDogLed();      // ALSO can put any main loop debug stuff here ... just to keep loop looking clean :)
 
+////////////////////////////////////////////////////////////
+//Step 1. get sensor data, including from physical switches
+////////////////////////////////////////////////////////////
     //hmm - if lockups are due to coms/sensor issue - then ONLY read data when mouse active - will reduce number of lockups
-    my3IMU.getYawPitchRoll(ypr);    // read the gyro data
+    if (mouseEnabled){
+        my3IMU.getYawPitchRoll(ypr);    // read the gyro data
 
-    // Calculate mouse relative movement distances x,y using chosen method
-    stepGrowth();          // if user moved a small amount, move mouse slowly, else move faster
+        // Calculate mouse relative movement distances x,y using chosen method
+        stepGrowth();          // if user moved a small amount, move mouse slowly, else move faster
+    }
 
-#ifdef HAS_ENABLE_SWITCH
-    // current code is ONLY for physical switch, not the virtual tap switch - look into merging tap code!!!
-    enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
-#endif
+    #ifdef HAS_ENABLE_SWITCH
+        // current code is ONLY for physical switch, not the virtual tap switch - look into merging tap code!!!
+        enableMouseControl();     // Toggle mouse control on/off based on switch or maybe not moving or moving timeout
+    #endif
 
+////////////////////////////////////////////////////////////
+//Step 2. Use te data to control mouse movement and switches and any other keyboard etc actions
+////////////////////////////////////////////////////////////
     controlMouse();    // Move mouse, click mouse buttons according to button press, or gesture control
 }
 
