@@ -1,3 +1,30 @@
+/* git - line endings ... related to wierdness been seeing??
+https://help.github.com/articles/dealing-with-line-endings
+
+Git will automatically manage line endings for you if you set the core.autocrlf option. On Windows, you usually want to use true for this setting.
+    git config --global core.autocrlf true
+
+
+Re-normalizing a repository
+
+After you've set the core.autocrlf option and committed a .gitattributes file, you may find that git wants to commit files that you've not modified.
+This is because git wants to normalize the line endings for you.
+The best way to do this is wipe out your working tree (all the files except the .git directory) and then restore them.
+****Make sure you've committed any work before you do this, or it will be lost.
+
+
+
+*/
+
+/*
+only occurs if #def macro name has ALREADY been defined prior!!!!
+
+#def compile issue - LOOK AT RAW ARD CPP FILE - another one oof those issues?????
+one site says #def var is empty...
+if so - how does freeIMU/JR get around it?????
+or as suggested on some site casued by entirely di #def.....
+*/
+
 /* Introduction
      Xinchejian Hackerspace Shanghai Assistive Devices project aims to create
  many assistive devices that are easily customised to an individuals needs.
@@ -19,6 +46,8 @@ While there are commercial devices for this purpose, but they tend to be less co
 This project aims to give this device MANY more features than most (all?) current commercial devices!
 
 */
+
+
 
 /* Air mouse capabilites / actions -  "what can you do with it?" - "How to use it?" - for a USER to read and understand!!!!!
 ie they need to know how to use every feature!
@@ -63,10 +92,7 @@ En/disable mouse buttons
 //***************************************************************************************************
 // START OF USER CONFIGURATION
 // You can change the variables here to change how the mouse behaves.
-
-
-//endable simple tap detection
-#define FREEIMU_TAP
+// It is organised into sections - Hardware selection, Capability selection, configuration
 
 //TODO make sure ALL user content written in user language
 //    especially variable names, so gyro = nonsense - convert to WristRotation.....
@@ -82,58 +108,78 @@ En/disable mouse buttons
 // eg switches, tap/shake.....
 
 
-// Variables common to STEPGROWTH
-int WristRotation = 60;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
-int WristTilt = 40;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 
-// slow mouse movement for small rotation/movement. faster for bigger
+// ******* START Hardware selection ********
 
-// The parameter(s) below should be user adjustable from COMPUTER based configuration program!
-//int step = 15;       // pitch or roll > step > step move mouse fast, else move slow!
-int stepX = WristRotation / 4;         // roll > step > step move mouse fast, else move slow!
-int stepY = WristTilt / 3;             // pitch > step > step move mouse fast, else move slow!
+    //Supported processors/boards - this is a list for you to copy your choice from!
+    // Generally no need to change this list!
+    // Note to developers: changes here need to be added into relevent code!
+    //     if you get errors like "error: operator '==' has no left operand"
+    //        then make sure ALL macros below have been assigned a value!!
+        #define LEONARDO_V    LEONARDO_V
+        #define TEENSYPP2_V1  TEENSYPP2_V1          // PP = ++, ie A Teensy++ 2
+        #define TEENSYPP1_V1  TEENSYPP1_V1          // PP = ++, ie A Teensy++ 1
+        #define TEENSY2_V1    t2v1
+        #define TEENSY1_V1    t1v1
+        #define TEENSY3_V1    t3v1
+        #define XADOW_V1      xv1
 
-// These varables cater for user with different amount of movement in any of the four directions!
-int mapLrgStepLeftX   = 5;
-int mapLrgStepRightX  = 5;
-int mapLrgStepUpY     = 5;
-int mapLrgStepDownY   = 5;
+        // Select YOUR processors/board here by copying the UPPERCASE board name above to replace the default board below.
+        #define PROCESSOR_BOARD TEENSYPP2_V1
 
-int mapSmlStepLeftX   = 1;    // 1 is smallest movement. 0 = no movement!
-int mapSmlStepRightX  = 1;
-int mapSmlStepUpY     = 1;
-int mapSmlStepDownY   = 1;
+        // Uncomment either of both of these if your setup has the matching switch
+        //#define HAS_ENABLE_SWITCH
+        //#define HAS_LEFT_MOUSE_SWITCH
 
-/* original setting used
-float mapLrgStepLeftX   = 15;
-float mapLrgStepRightX  = 15;
-float mapLrgStepUpY     = 15;
-float mapLrgStepDownY   = 15;
+        //TODO - ??add sensor selection gyro, accelerometer, combined data, ...
 
-float mapSmlStepLeftX   = 3;
-float mapSmlStepRightX  = 3;
-float mapSmlStepUpY     = 3;
-float mapSmlStepDownY   = 3;
-*/
+// ******* END Hardware selection ********
 
-// trying more ways to get finer mouse control
-// TODO - review if required - eg instead control IN THE OPERATING system mouse configuration!!!
-int RotationScaleX = 5;
-int RotationScaleY = 5;
+// ******* START Capability selection ********
+    // en/disable simple tap detection
+    #define FREEIMU_TAP
+// ******* END Capability selection ********
 
-//TODO maybe set up a #def for each supported board, that then in turn sets the correct LEDs etc for each board.
-//Select the pin number of the LED on the microcontroller board
-#define LED_PIN 6                // LED on pin 6 for Teensy++ 2, Teensy++ 1, Teensy 2 and Teensy 1.
-                                // Pin 13 on Leonardo, Teensy3
-                                // Pin 17 or 11 on Xadow
+// ******* Configuration ********
+    // Variables common to STEPGROWTH
+    int WristRotation = 60;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+    int WristTilt = 40;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 
-// Uncomment either of both of these if your setup has the matching switch
-//#define HAS_ENABLE_SWITCH
-//#define HAS_LEFT_MOUSE_SWITCH
-//TODO move tap #def/s here as well
+    // slow mouse movement for small rotation/movement. faster for bigger
 
+    // The parameter(s) below should be user adjustable from COMPUTER based configuration program!
+    //int step = 15;       // pitch or roll > step > step move mouse fast, else move slow!
+    int stepX = WristRotation / 4;         // roll > step > step move mouse fast, else move slow!
+    int stepY = WristTilt / 3;             // pitch > step > step move mouse fast, else move slow!
 
-//TODO - add sensor selection gyro, accelerometer, combined data, ...
+    // These varables cater for user with different amount of movement in any of the four directions!
+    int mapLrgStepLeftX   = 5;
+    int mapLrgStepRightX  = 5;
+    int mapLrgStepUpY     = 5;
+    int mapLrgStepDownY   = 5;
+
+    int mapSmlStepLeftX   = 1;    // 1 is smallest movement. 0 = no movement!
+    int mapSmlStepRightX  = 1;
+    int mapSmlStepUpY     = 1;
+    int mapSmlStepDownY   = 1;
+
+    /* original setting used
+    float mapLrgStepLeftX   = 15;
+    float mapLrgStepRightX  = 15;
+    float mapLrgStepUpY     = 15;
+    float mapLrgStepDownY   = 15;
+
+    float mapSmlStepLeftX   = 3;
+    float mapSmlStepRightX  = 3;
+    float mapSmlStepUpY     = 3;
+    float mapSmlStepDownY   = 3;
+    */
+
+    // trying more ways to get finer mouse control
+    // TODO - review if required - eg instead control IN THE OPERATING system mouse configuration!!!
+    int RotationScaleX = 5;
+    int RotationScaleY = 5;
+// ******* END Configuration ********
 
 
 
@@ -250,6 +296,34 @@ boolean leftMouseButtonPressed = false;
 int watchDogCounter = 0;
 boolean watchDogLED = false;
 int watchDogLimit = 0;        // Control how fast LED flashes
+
+// if you get errors like "error: operator '==' has no left operand"
+// then make sure the RHS variable is not empty and has some value - see user config section.
+#if PROCESSOR_BOARD == LEONARDO_V
+    #define LED_PIN 13
+    asd
+#elif PROCESSOR_BOARD == TEENSYPP2_V1
+    #define LED_PIN 6
+    asdsad
+#elif PROCESSOR_BOARD == TEENSYPP1_V1
+    #define LED_PIN 6
+#elif PROCESSOR_BOARD == TEENSY2_V1
+    #define LED_PIN 6
+#elif PROCESSOR_BOARD == TEENSY1_V1
+    #define LED_PIN 6
+#elif PROCESSOR_BOARD == TEENSY3_V1
+    #define LED_PIN 13
+#elif PROCESSOR_BOARD == XADOW_V1
+    //Select the pin number of the LED on the microcontroller board
+    #define LED_PIN 17          // 17 = red LED, 11 = Green LED
+#else
+    # error Unknown PROCESSOR_BOARD #define value!!!!
+#endif
+
+
+
+
+
 
 
 #ifdef HAS_LEFT_MOUSE_SWITCH
