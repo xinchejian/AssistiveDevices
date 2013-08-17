@@ -97,12 +97,12 @@ En/disable mouse buttons
     // Uncomment YOUR processors/board here by removing the "//" at the start of the line
     // MAKE SURE that there is ONLY ONE LINE uncommented (ie only one line without "//" at the start!
         //#define BOARD  1      // Leonardo
-        //#define BOARD  2      // Teensy++ 2
+        #define BOARD  2      // Teensy++ 2
         //#define BOARD  3      // TEENSYPP1_V1          // PP = ++, ie A Teensy++ 1
         //#define BOARD  4      // TEENSY2_V1
         //#define BOARD  5      // TEENSY1_V1
         //#define BOARD  6      // TEENSY3_V1
-        #define BOARD  7      // Xadow
+        //#define BOARD  7      // Xadow
     // Note to developers: changes in the above need to be reflected in relevent code!
 
 
@@ -113,6 +113,8 @@ En/disable mouse buttons
 
         //TODO - ??add sensor selection gyro, accelerometer, combined data, ...
 
+        // TODO user defined or do more like board??
+        //  currently thinking this way, so user can easily change pin use to meet any added features/differences
         // Set IO pins used for buttons, if buttons used!
         #ifdef HAS_LEFT_MOUSE_SWITCH
             #define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6 of many Teensy's
