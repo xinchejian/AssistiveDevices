@@ -1,6 +1,42 @@
 /* TODO stuff:-
 
-mouse update rate
+   TODO - add MORE virtual switches/tap/shake/other gestures
+   TODO - may need to switch to I2Cdev lib instead of freeIMU
+   TODO - add auto en/disable - if no movement (gyro or accel - just one/both?) for a few seconds.
+
+
+
+   TODO - hey use the THIRD gyro as another input/switch!!!!
+   it could be a natural for point at screen = mouse on, relaxed finger/hand points away = mouse off!
+
+track "mouse miles" - distance travelled over time
+... turn into data on "how active" user is, when to rest, ....
+        health status - alarms - hs user fallen, or inactive for period
+        panic alarm
+
+from feescale medial applications   <<<< HUGE SOURCE OF IDEAS & tech info!!!!!!!
+Heartbeat Detection
+The heartbeat rate is a vital patient
+measurement. The following procedure is
+used to obtain this measurement. While
+deflating a cuff that is attached to a person’s
+arm, slight variations in the overall cuff
+pressure may be detected (Figure 4-2). This
+variation in the cuff’s pressure is due to the
+pressure change from blood circulation. This
+variation is amplified through a filter designed
+at 1 Hz, and set to an offset. This new signal
+is the heartbeat signal.
+
+?? temp sensor to get some indication of user/env temp or user comfort/health????
+
+        - keyboard macros to aid common tasks and type snippets of common text or messages
+
+        Control of tablets and smart phones
+
+        ??IR remote control
+
+        mouse update rate
     - what should it be?
     - what is too slow?
     - issues with interrupts &/or FIFO overflow (how does freeIMU handle overflows?)

@@ -1,85 +1,59 @@
-/* git - line endings ... related to wierdness been seeing??
-https://help.github.com/articles/dealing-with-line-endings
+// re validate board LED pin#'s!!!!!1
 
-Git will automatically manage line endings for you if you set the core.autocrlf option. On Windows, you usually want to use true for this setting.
-    git config --global core.autocrlf true
+//TODO tidy debug stuff - MAYBE KEEP MOST - but as functions in seperate file
+// change REMAINING debug prints to MACROs
 
-
-Re-normalizing a repository
-
-After you've set the core.autocrlf option and committed a .gitattributes file, you may find that git wants to commit files that you've not modified.
-This is because git wants to normalize the line endings for you.
-The best way to do this is wipe out your working tree (all the files except the .git directory) and then restore them.
-****Make sure you've committed any work before you do this, or it will be lost.
+// on wiki doc UPDATE Ard GUI install ( use swarm) + exact libraries AND teh wprogram/Arduino.h issue with bounce
+// this happened 2 x ~ 14 & 16/8  - both on Windows??? - 2nd one was def!
 
 
-$ git rm --cached -r .
-# Remove everything from the index.
-
-$ git reset --hard
-# Write both the index and working directory from git's database.
-
-$ git add .
-# Prepare to make a commit by staging all the files that will get normalized.
-# This is your chance to inspect which files were never normalized. You should
-# get lots of messages like: "warning: CRLF will be replaced by LF in file."
-
-$ git commit -m "Normalize line endings"
-# Commit
-*/
-
-/*
-only occurs if #def macro name has ALREADY been defined prior!!!!
-
-#def compile issue - LOOK AT RAW ARD CPP FILE - another one oof those issues?????
-one site says #def var is empty...
-if so - how does freeIMU/JR get around it?????
-or as suggested on some site casued by entirely di #def.....
-*/
-
-/* Introduction
+/* Introduction     REVIEW - HOW MUCH HERE - VS THE WIKI!!!!!!!
      Xinchejian Hackerspace Shanghai Assistive Devices project aims to create
  many assistive devices that are easily customised to an individuals needs.
  Assistive Devices are anything, physical, electronic or software to help people accomplish everyday tasks.
- See http://wiki.xinchejian.com/wiki/Assistive_Devices
+
+ All information including assembly details are at: http://wiki.xinchejian.com/wiki/Assistive_Devices
 
  The projects are open source and everyone is encourage to contribute to the hardware, the software,
  the documentation (in many languages) and especially in using the devices.
 
- This sub-project aims to create:-
- - a smaller, lighter device that can be used by several area of the body,
- including finger, wrist, arm, head, foot.
+ This sub-project aims to create an "Air mouse" or "wand" that is:-
+ - small, lightweight
+ - can be used by different parts of the body,
+        including finger, wrist, arm, head, foot.
  - be highly configurable and customisable to meet an indivuals needs
  - relatively cheap and easy to get all of the parts
 
-This program uses a gyros and accelerometers to create an air-mouse, or wand to control a computers mouse.
+ It uses gyros and accelerometers to create an air-mouse, or wand to control a computers mouse.
 
 While there are commercial devices for this purpose, but they tend to be less configurable.
 This project aims to give this device MANY more features than most (all?) current commercial devices!
 
 */
 
-
-
+// TODO - review HERE & user config - terms same and ALL included - nothing missing frm EITHER section
+//?? merge the two sections? --- or keep this one as overview/intro
 /* Air mouse capabilites / actions -  "what can you do with it?" - "How to use it?" - for a USER to read and understand!!!!!
 ie they need to know how to use every feature!
 
  General how to info:
     - Sensor has to be aligned correctly with your body.
-    - Try to aim or point the sensor at teh computer screen.
-    - For finger/wrist/arm mouse align marker to point at tip of limb.
+        eg for finger/wrist/arm mouse align marker to point at tip of limb.
+    - Initially, try to aim or point the sensor at computer screen.
     - For head mouse ... to be sorted out :)
+    - Your mounting method (how you "wear" the sensor) should consider this and especially user comfort.
 
 Configuration / customisation
-    Note MANY features are optional and can be turned on/off in the code - see "USER CONFIGURATION" section
-    - in near? future this will be done using a computer user configuration application
+    Note MANY features are optional and can be turned on/off in the code
+    - see "USER CONFIGURATION" section
+    - in (near?) future this will be done using a computer user configuration application
 
     Don't forget your operating system ALSO allows configuration of mouse & button behaviour.
     And if you are using any assistive software, it may also help adjust to meet indidvuals needs.
 
 Mouse movement control
     - Rotational control: - rotate wrist for horizontal mouse control, tilt up/down for vertical mouse control
-    - Traditional linear mouse control using the air mouse = TODO needs to be added!
+    - TODO needs to be added! Traditional linear mouse control using the air mouse
     - more - eg keyboard arrow control, but using real or virtual switches???
 
 Mouse button control
@@ -87,7 +61,8 @@ Mouse button control
     - if installed & enabled used the physical switches as mouse buttons
 
 Additional actions
-    - none yet but looking to add a LOT more tap/shake/gesture etc actions
+    - a longer shake than "Left Mouse Button down" will alternately enable or diable mouse movement control
+    - looking to add a LOT more tap/shake/gesture etc actions
         that can control more mouse buttons/scroll wheel and keyboard, .....
 
 En/disable mouse movement
@@ -104,7 +79,7 @@ En/disable mouse buttons
 //***************************************************************************************************
 // START OF USER CONFIGURATION
 // You can change the variables here to change how the mouse behaves.
-// It is organised into sections - Hardware selection, Capability selection, configuration
+// It is organised into three sections - Hardware selection, Capability selection and Configuration
 
 //TODO make sure ALL user content written in user language
 //    especially variable names, so gyro = nonsense - convert to WristRotation.....
@@ -116,88 +91,89 @@ En/disable mouse buttons
 // that ALSO enable user to test each action and movement range/speed/fine control
 
 
-//TODO make sure all features documented, especially those turned on/off here!
-// eg switches, tap/shake.....
-
-
-
 // ******* START Hardware selection ********
 
-    //Supported processors/boards - this is a list for you to copy your choice from!
-    // Generally no need to change this list!
-    // Note to developers: changes here need to be added into relevent code!
-    //     if you get errors like "error: operator '==' has no left operand"
-    //        then make sure ALL macros below have been assigned a value!!
-        #define LEONARDO_V    LEONARDO_V
-        #define TEENSYPP2_V1  TEENSYPP2_V1          // PP = ++, ie A Teensy++ 2
-        #define TEENSYPP1_V1  TEENSYPP1_V1          // PP = ++, ie A Teensy++ 1
-        #define TEENSY2_V1    t2v1
-        #define TEENSY1_V1    t1v1
-        #define TEENSY3_V1    t3v1
-        #define XADOW_V1      xv1
+    // Supported processors/boards
+    // Uncomment YOUR processors/board here by removing the "//" at the start of the line
+    // MAKE SURE that there is ONLY ONE LINE uncommented (ie only one line without "//" at the start!
+        //#define BOARD  1      // Leonardo
+        //#define BOARD  2      // Teensy++ 2
+        //#define BOARD  3      // TEENSYPP1_V1          // PP = ++, ie A Teensy++ 1
+        //#define BOARD  4      // TEENSY2_V1
+        //#define BOARD  5      // TEENSY1_V1
+        //#define BOARD  6      // TEENSY3_V1
+        #define BOARD  7      // Xadow
+    // Note to developers: changes in the above need to be reflected in relevent code!
 
-        // Select YOUR processors/board here by copying the UPPERCASE board name above to replace the default board below.
-        #define PROCESSOR_BOARD TEENSYPP2_V1
 
-        // Uncomment either of both of these if your setup has the matching switch
+        // Uncomment none, one or both of these to match the switches in your setup
         //#define HAS_ENABLE_SWITCH
         //#define HAS_LEFT_MOUSE_SWITCH
+        //TODO - Add right button, scroll wheel equivalent.
 
         //TODO - ??add sensor selection gyro, accelerometer, combined data, ...
 
-// ******* END Hardware selection ********
+        // Set IO pins used for buttons, if buttons used!
+        #ifdef HAS_LEFT_MOUSE_SWITCH
+            #define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6 of many Teensy's
+        #endif
+        #ifdef HAS_ENABLE_SWITCH
+            #define TOGGLE_MOUSE_BUTTON 5
+        #endif
 
+// ******* END Hardware selection ********
 // ******* START Capability selection ********
+
     // en/disable simple tap detection
     #define FREEIMU_TAP
+// TODO replace FREEIMU_TAP with en/disable EACH tap feature - left button, en/dsiable mouse, ....
+
 // ******* END Capability selection ********
 
 // ******* Configuration ********
     // Variables common to STEPGROWTH
-    int WristRotation = 60;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
-    int WristTilt = 40;            // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+    int WristRotation = 60;             // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
+    int WristTilt = 40;                 // gyro range is +/- this value.... at least in standard cfg. otherwise can be 0-90-0!!!!
 
     // slow mouse movement for small rotation/movement. faster for bigger
-
-    // The parameter(s) below should be user adjustable from COMPUTER based configuration program!
-    //int step = 15;       // pitch or roll > step > step move mouse fast, else move slow!
     int stepX = WristRotation / 4;         // roll > step > step move mouse fast, else move slow!
     int stepY = WristTilt / 3;             // pitch > step > step move mouse fast, else move slow!
 
     // These varables cater for user with different amount of movement in any of the four directions!
-    int mapLrgStepLeftX   = 5;
-    int mapLrgStepRightX  = 5;
+    // The first two mapLrgStepLeftX and mapLrgStepRightX are used if current WristRotation > stepX
+    // otherwise the matching mapSmlStep values are used.
+    // Ditto for stepY and Lrg/Sml variables below.
+    int mapLrgStepLeftX   = 5;    // larger numbers may casue mouse cursor to "jump" from place to place!
+    int mapLrgStepRightX  = 5;    // 15 might be a good value if user has good fine control
     int mapLrgStepUpY     = 5;
     int mapLrgStepDownY   = 5;
 
     int mapSmlStepLeftX   = 1;    // 1 is smallest movement. 0 = no movement!
-    int mapSmlStepRightX  = 1;
+    int mapSmlStepRightX  = 1;    // 3 might be a good value if user has good fine control
     int mapSmlStepUpY     = 1;
     int mapSmlStepDownY   = 1;
-
-    /* original setting used
-    float mapLrgStepLeftX   = 15;
-    float mapLrgStepRightX  = 15;
-    float mapLrgStepUpY     = 15;
-    float mapLrgStepDownY   = 15;
-
-    float mapSmlStepLeftX   = 3;
-    float mapSmlStepRightX  = 3;
-    float mapSmlStepUpY     = 3;
-    float mapSmlStepDownY   = 3;
-    */
 
     // trying more ways to get finer mouse control
     // TODO - review if required - eg instead control IN THE OPERATING system mouse configuration!!!
     int RotationScaleX = 5;
     int RotationScaleY = 5;
+
+
+#ifdef FREEIMU_TAP
+    // values here are purely empirical
+    const int tap_threshold = 10000;        //12000;    in mill-g's??
+    const long tap_duration = 22000;        //19375;    in microSeconds
+#endif
 // ******* END Configuration ********
 
 
 
 // END OF USER CONFIGURATION
 // End users, you can ignore everything below here, unless you want to improve the capability of this device,
-// if so, then please contribute to the code and share with the community (push back to github!)
+// if so, then please contribute by:-
+//      - sending bug reports, updated documentation, translations, or
+//      - updating code
+// and share with the community (push back to github!)
 //***************************************************************************************************
 //***************************************************************************************************
 //***************************************************************************************************
@@ -232,122 +208,69 @@ En/disable mouse buttons
  or call your bank manager and lawyer!
  */
 
+/* STATUS:- working pretty well with step method.
+   See code comments & seperate file "ToDo_and_Ideas.ino" for more.
+   ** Please write your progress/research notes in "ToDo_and_Ideas.ino" or add MORE files,
+   and push often to the github repo, so that EVERYONE can keep up with the current work :) **
 
-// STATUS:- working pretty well with step method.
-// See code comments & seperate file "ToDo_and_Ideas.ino" for more.
-// ** Please write your progress/research notes in "ToDo_and_Ideas.ino" or add MORE files,
-// and push often to the github repo, so that EVERYONE can keep up with the current work :) **
-// If you are comfortable/capable using git, then consider branching the code to work on features.
+   If you are comfortable/capable using git, then consider branching the code to work on features.
+*/
 
-// TODO - add MORE virtual switches/tap/shake/other gestures
-// TODO - may need to switch to I2Cdev lib instead of freeIMU
-// TODO - add auto en/disable - if no movement (gyro or accel - just one/both?) for a few seconds.
-
-
-/* Notes & programming info/tips
- Have to use Free-IMU version of I2Cdev library - not one from Jeffs I2Cdev site/SVN
- ?? This lib is BUNDLED with freeIMU - CHECK!!!!
-
- vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
- *** The freeIMU lib has some config TODO INSIDE freeIMU.h
- For hardware in use here - have to uncomment last two #defines (although was working with default commented out!)
- ALSO had to change step var from 5 to 10!
-
-
- // 3rd party boards. Please consider donating or buying a FreeIMU board to support this library development.
- //#define SEN_10121 //IMU Digital Combo Board - 6 Degrees of Freedom ITG3200/ADXL345 SEN-10121 http://www.sparkfun.com/products/10121
- //#define SEN_10736 //9 Degrees of Freedom - Razor IMU SEN-10736 http://www.sparkfun.com/products/10736
- //#define SEN_10724 //9 Degrees of Freedom - Sensor Stick SEN-10724 http://www.sparkfun.com/products/10724
- //#define SEN_10183 //9 Degrees of Freedom - Sensor Stick  SEN-10183 http://www.sparkfun.com/products/10183
- //#define ARDUIMU_v3 //  DIYDrones ArduIMU+ V3 http://store.diydrones.com/ArduIMU_V3_p/kt-arduimu-30.htm or https://www.sparkfun.com/products/11055
- #define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
-
- #define DISABLE_MAGN // Uncomment this line to disable the magnetometer in the sensor fusion algorithm
-
- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
- Starting with ALL the main loop functions as inline so that:-
- - code is readable
- - just in case processing loop time is critical
- - can easily change this either way at any time.
- */
-
-
-// TODO - hey use the THIRD gyro as another input/switch!!!!
-// it could be a natural for point at screen = mouse on, relaxed finger/hand points away = mouse off!
-
-
-
-
-
-//TO DO some of thse var might need to be user vars - move above!!!!
 #ifdef FREEIMU_TAP
-int raw_values[11];
-char str[512];
-float val[9], q[4];
+    int raw_values[11];
+    char str[512];
+    float val[9], q[4];
 
-unsigned long tap_window_start, time_in_window;
-bool tap_in_window = 0;
-
-// values here are purely empirical
-const int tap_threshold = 10000;        //12000;
-const long tap_duration = 22000;        //19375;
+    unsigned long tap_window_start, time_in_window;
+    bool tap_in_window = 0;
 #endif
 
-// mouse will not move from sensor control,
-//BUT mouse move commands (0,0,0) still sent - to keep testing realsistic!
+
+// Mouse will not move from sensor control,
+// BUT mouse move commands (0,0,0) still sent - to keep testing realsistic!
 //#define DEBUG_FORCE_NO_MOUSE_MOVE
 
-// For now JUST using button to TOGGLE mouse on/off
 boolean mouseEnabled = false;     // en/disable mouse movement
 boolean enablingMouse = false;    // used as part of enable process
 boolean leftMouseButtonPressed = false;
 
-//TODO - currently LED flashes slow if mouse control disabled, fast if enabled = OK!
-//    BUT there is NO watchdog functionality, other than LED flashes if processor is still looping :)
+// LED flashes slow if mouse control disabled, fast if enabled
+// NOT "real" watchdog functionality - but does indicate if still executing main loop :)
 int watchDogCounter = 0;
 boolean watchDogLED = false;
 int watchDogLimit = 0;        // Control how fast LED flashes
 
-// if you get errors like "error: operator '==' has no left operand"
-// then make sure the RHS variable is not empty and has some value - see user config section.
-#if PROCESSOR_BOARD == LEONARDO_V
+/* Board specific stuff, eg LED pin number
+this list reproduced here - just for reference!
+TO DO add the LED pin #s to the list!
+ BOARD  1      Leonardo
+ BOARD  2      Teensy++ 2
+ BOARD  3      TEENSYPP1_V1          PP = ++, ie A Teensy++ 1
+ BOARD  4      TEENSY2_V1
+ BOARD  5      TEENSY1_V1
+ BOARD  6      TEENSY3_V1
+ BOARD  7      Xadow
+*/
+#if (BOARD == 1) || (BOARD == 6)
     #define LED_PIN 13
-    asd
-#elif PROCESSOR_BOARD == TEENSYPP2_V1
+#elif (BOARD == 2)|| (BOARD == 3) || (BOARD == 4) || (BOARD == 5)
     #define LED_PIN 6
-    asdsad
-#elif PROCESSOR_BOARD == TEENSYPP1_V1
-    #define LED_PIN 6
-#elif PROCESSOR_BOARD == TEENSY2_V1
-    #define LED_PIN 6
-#elif PROCESSOR_BOARD == TEENSY1_V1
-    #define LED_PIN 6
-#elif PROCESSOR_BOARD == TEENSY3_V1
-    #define LED_PIN 13
-#elif PROCESSOR_BOARD == XADOW_V1
-    //Select the pin number of the LED on the microcontroller board
+#elif BOARD == 7
     #define LED_PIN 17          // 17 = red LED, 11 = Green LED
 #else
-    # error Unknown PROCESSOR_BOARD #define value!!!!
+    # error Unknown BOARD #define value!!!!
 #endif
-
-
-
-
 
 
 
 #ifdef HAS_LEFT_MOUSE_SWITCH
 #include <Bounce.h>  // Has been working, but under windows7, just had to edit bounce.cpp & rename WProgam.h to Arduino.h
-#define L_MOUSE_BUTTON 7        // skipped a pin because the LED is on pin 6
 // Instantiate a Bounce object with a 5 millisecond debounce time
 Bounce deBounceLeft = Bounce( L_MOUSE_BUTTON, 5 );
 #endif
 
 #ifdef HAS_ENABLE_SWITCH
 #include <Bounce.h>  // Has been working, but under windows7, just had to edit bounce.cpp & rename WProgam.h to Arduino.h
-#define TOGGLE_MOUSE_BUTTON 5
 // Instantiate a Bounce object with a 5 millisecond debounce time
 Bounce deBounceToggle = Bounce( TOGGLE_MOUSE_BUTTON, 5 );
 #endif
@@ -358,7 +281,7 @@ int x;        // mouse relative movement, derived from the user selected sensor 
 int y;        // mouse relative movement
 
 
-
+//TODO review this - comments probably nonsense!
 // TESTING - commented out 3 #def's below (ADXL345, bma180, ITG3200)
 // - still compiles & runs - BUT seems a LOT more sensitive - ie larger mouse movement & harder to control
 #include <ADXL345.h>
@@ -370,6 +293,7 @@ int y;        // mouse relative movement
 #include <MPU60X0.h>
 #include <EEPROM.h>
 
+//TODO test debug!!!!!!!!!!!!!!!!!!!!!!
 //#define DEBUG
 #include "DebugUtils.h"
 #include "FreeIMU.h"
@@ -387,16 +311,23 @@ FreeIMU my3IMU = FreeIMU();
 void setup() {
     pinMode(LED_PIN,OUTPUT);
 
-    Serial.begin(115200);
-Serial.println("howdy - debug wait for 10 seconds - does mouse.begin & later mousemove interfere with code uploading?") ;
+    #ifdef HAS_ENABLE_SWITCH
+        pinMode(TOGGLE_MOUSE_BUTTON,INPUT);
+    #endif
+    #ifdef HAS_LEFT_MOUSE_SWITCH
+        pinMode(L_MOUSE_BUTTON,INPUT);
+    #endif
 
-    // debugging - does mouse.begin & later mousemove interfere with code uploading?
-    for (int i = 0; i <20; i++){
-        digitalWrite(LED_PIN, LOW);
-        delay(250);
-        digitalWrite(LED_PIN, HIGH);
-        delay(250);
-    }
+// debugging - On Leonardo type boards, does mouse.begin & later mousemove interfere with code uploading?
+// Teensy's have difffent behaviour
+Serial.begin(115200);
+Serial.println("howdy - debug wait for 10 seconds - does mouse.begin & later mousemove interfere with code uploading?") ;
+for (int i = 0; i <20; i++){
+    digitalWrite(LED_PIN, LOW);
+    delay(250);
+    digitalWrite(LED_PIN, HIGH);
+    delay(250);
+}
 Serial.println("AFTER - debug wait for 10 seconds") ;
 
     Mouse.begin();
@@ -410,12 +341,6 @@ Serial.println("AFTER - debug wait for 10 seconds") ;
   delay(10);
 #endif
 
-#ifdef HAS_ENABLE_SWITCH
-    pinMode(TOGGLE_MOUSE_BUTTON,INPUT);
-#endif
-#ifdef HAS_LEFT_MOUSE_SWITCH
-    pinMode(L_MOUSE_BUTTON,INPUT);
-#endif
 }
 
 
@@ -440,7 +365,7 @@ void loop() {
     #endif
 
 ////////////////////////////////////////////////////////////
-//Step 2. Use te data to control mouse movement and switches and any other keyboard etc actions
+//Step 2. Use the data to control mouse movement and switches and any other keyboard etc actions
 ////////////////////////////////////////////////////////////
     controlMouse();    // Move mouse, click mouse buttons according to button press, or gesture control
 }
@@ -452,10 +377,10 @@ void loop() {
 // Subroutines and functions below here
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-// slow mouse movement for small rotation/movement. faster for bigger
+// slow mouse movement for small rotation/tilt. faster for bigger
 inline void stepGrowth(){
 
-//TODO - changes in mapping values do not seem to produce expected mouse movement changes!
+//TODO - continue refining fine(small) and large movement mouse cursor movement control!
 // try Serial.print input & output of map commands to see what is going on!
     // Settings used with Xadow
     // If current pitch or roll > step, move mouse fast, else move slow!
